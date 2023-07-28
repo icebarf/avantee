@@ -1,0 +1,5 @@
+The client-server code is taken from microsoft's "Using winsock" webpage.
+It has been adopted to work with a thin wrapper that I wrote to test that
+everything works as intended on different platforms without much headache.
+
+Naturally, All rights reserved on the code in this subdirectory for microsoft.
