@@ -66,7 +66,6 @@ terminate()
       default:
         fprintf(stderr, "icysock: WSACleanup() - Unknown error.\n");
     }
-    std::terminate();
   }
 #endif
 }
