@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 add_executable(server)
-target_sources(server PRIVATE src/generic_sockets.cpp
+target_sources(server PRIVATE src/socket/generic_sockets.cpp
                           PRIVATE testing/test-server.cpp
               )
 target_include_directories(server PRIVATE include/)
@@ -19,7 +19,7 @@ target_compile_options(server PUBLIC -Wall -Wextra -Werror -Wpedantic
                                       -Wshadow -Wconversion)
 
 add_executable(client)
-target_sources(client PRIVATE src/generic_sockets.cpp
+target_sources(client PRIVATE src/socket/generic_sockets.cpp
                           PRIVATE testing/test-client.cpp
               )
 if(${CMAKE_HOST_WIN32})
