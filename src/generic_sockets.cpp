@@ -26,8 +26,8 @@ SOCKDATA
 init()
 {
   int result = 0;
-  SOCKDATA wsadata;
 #if defined(ICY_ON_WINDOWS)
+  SOCKDATA wsadata;
   result = WSAStartup(MAKEWORD(2, 2), &wsadata);
   if (result != 0) {
     fprintf(stderr, "icysock: WSAStartup failed with code: %d\n", result);
@@ -45,7 +45,7 @@ void
 terminate()
 {
 #if defined(ICY_ON_WINDOWS)
-  if (int ret = WSACleanup()) {
+  if (WSACleanup() == SOCK_ERR) {
     switch (WSAGetLastError()) {
       case WSANOTINITIALISED:
         fprintf(stderr,
@@ -68,6 +68,16 @@ terminate()
     }
     std::terminate();
   }
+#endif
+}
+
+int
+close_socket(icy_socket s)
+{
+#if defined(ICY_ON_WINDOWS)
+  return closesocket(s);
+#else
+  return close(s);
 #endif
 }
 

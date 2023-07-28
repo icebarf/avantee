@@ -38,7 +38,12 @@
 #include <ws2tcpip.h>
 
 namespace icysock {
+
 #define BAD_SOCKET INVALID_SOCKET
+#define SOCK_ERR SOCKET_ERROR
+#define SHUT_RD SD_RECEIVE
+#define SHUT_WR SD_SEND
+#define SHUT_RDWR SD_BOTH
 
 /* introduce alias types on windows */
 using SOCKDATA = WSADATA;
@@ -48,17 +53,25 @@ using icy_socket = SOCKET;
 #else
 
 #include <arpa/inet.h>
-#include <sys/sockets.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 namespace icysock {
-#define BAD_SOCKET -1
 
-/* introduce alias types on windows */
+#define BAD_SOCKET -1
+#define SOCK_ERR -1
+
+/* introduce alias types on other platform */
 using SOCKDATA = int;
-using icySocket = int;
+using icy_socket = int;
 }
 
 #endif
+
+#include <errno.h>
 
 namespace icysock {
 
@@ -79,6 +92,12 @@ init();
  */
 void
 terminate();
+
+/* wrap around the windows closesocket() and berkely close()
+ * API calls
+ */
+int
+close_socket(icy_socket s);
 
 }
 #endif
