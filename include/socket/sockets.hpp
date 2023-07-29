@@ -113,7 +113,6 @@ public:
   managed_socket(const std::string_view hostname,
                  const std::string_view service,
                  const struct socket_hint hint);
-  ~managed_socket();
 
 }; // class ManagedSocket
 

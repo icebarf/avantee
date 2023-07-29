@@ -155,6 +155,4 @@ managed_socket::managed_socket(const string_view hostname,
   }
 }
 
-managed_socket::~managed_socket() { icysock::terminate(); }
-
 }
