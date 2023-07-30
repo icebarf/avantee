@@ -1,42 +1,12 @@
 #include "socket/sockets.hpp"
+#include "socket/error_utils.hpp"
 
 #include <cstdio>
-#include <exception>
 
 using namespace std;
 using std::fprintf;
 
 namespace BetterSockets {
-
-/*** Exceptions ***/
-
-SocketInitError::SocketInitError(const std::string& what_arg)
-  : what_string(what_arg)
-{
-}
-
-SocketInitError::SocketInitError(const char* what_arg)
-  : what_string(what_arg)
-{
-}
-
-SocketInitError::SocketInitError(const SocketInitError& other)
-{
-  this->what_string = other.what_string;
-}
-
-SocketInitError&
-SocketInitError::operator=(const SocketInitError& other) noexcept
-{
-  this->what_string = other.what_string;
-  return *this;
-}
-
-const char*
-SocketInitError::what() const noexcept
-{
-  return what_string.c_str();
-}
 
 /*** Socket abstraction implementation ***/
 
@@ -61,8 +31,8 @@ addressinfo_handle::addressinfo_handle(const std::string_view hostname,
   int rv = getaddrinfo(hostname.data(), service.data(), &hints, &info);
   if (rv != 0) {
     fprintf(stderr, "sockets: getaddrinfo(): %s\n", gai_strerror(rv));
-    icysock::terminate();
-    throw SocketInitError(gai_strerror(rv));
+    throw icysock_errors::SocketInitError(
+      icysock_errors::errc::getaddrinfo_failure, gai_strerror(rv));
   }
 
   for (auto p = info; p->ai_next != nullptr; p = p->ai_next)
@@ -149,9 +119,9 @@ managed_socket::managed_socket(const string_view hostname,
     } // if
   }   // for
 
+  /* we know the list is most likely empty */
   if (socket_handle == BAD_SOCKET) {
-    throw SocketInitError(
-      "No valid socket returned by socket()! List is empty.");
+    throw icysock_errors::SocketInitError(icysock_errors::errc::bad_socket);
   }
 }
 

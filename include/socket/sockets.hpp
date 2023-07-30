@@ -1,31 +1,12 @@
 #ifndef ICETEA_SOCKETS_H
 #define ICETEA_SOCKETS_H
 
-#include <exception>
 #include <iterator>
-#include <string>
 #include <string_view>
 
 #include "generic_sockets.hpp"
 
 namespace BetterSockets {
-
-/* Exceptions */
-
-class SocketInitError : public std::exception
-{
-private:
-  std::string what_string;
-
-public:
-  explicit SocketInitError(const std::string& what_arg);
-  explicit SocketInitError(const char* what_arg);
-  SocketInitError(const SocketInitError& other);
-
-  SocketInitError& operator=(const SocketInitError& other) noexcept;
-
-  const char* what() const noexcept override;
-};
 
 /* Socket abstraction */
 
