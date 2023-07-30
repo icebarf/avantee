@@ -29,8 +29,8 @@ make_error_code(errc e) noexcept
         case errc::getaddrinfo_failure:
           return std::string("getaddrinfo() failed");
 
-        case errc::empty_addrinfo:
-          return std::string("addrinfo list structure is empty");
+        case errc::bad_addrinfolist:
+          return std::string("addrinfo list structure is bad");
 
         default:
           return "Unknown error";
@@ -86,6 +86,7 @@ SocketInitError&
 SocketInitError::operator=(const SocketInitError& other) noexcept
 {
   this->what_string = other.what_string;
+  this->ecode = other.ecode;
   return *this;
 }
 

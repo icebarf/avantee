@@ -17,8 +17,8 @@ enum class errc
 {
   success = 0,
   bad_socket,
+  bad_addrinfolist,
   getaddrinfo_failure,
-  empty_addrinfo,
 };
 
 std::error_code

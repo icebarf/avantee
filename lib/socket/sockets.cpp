@@ -1,5 +1,8 @@
-#include "socket/sockets.hpp"
+#include <cerrno>
+#include <cstring>
+
 #include "socket/error_utils.hpp"
+#include "socket/sockets.hpp"
 
 using namespace std;
 
@@ -132,16 +135,20 @@ managed_socket::managed_socket(const string_view hostname,
       socket(ainfo.ai_family, ainfo.ai_socktype, ainfo.ai_protocol);
 
     if (socket_handle == BAD_SOCKET) {
-      // socket is bad - what to do
+      // socket is bad, this addrinfo structure didn't work
+      // better try the next one until it works... or all of them fail.
       continue;
-    } // if
+    }
 
     break;
   }
 
-  /* we know the entire list is most likely empty */
   if (socket_handle == BAD_SOCKET) {
-    throw icysock_errors::SocketInitError(icysock_errors::errc::empty_addrinfo);
+    /* we know the entire list is most likely empty */
+    throw icysock_errors::SocketInitError(
+      icysock_errors::errc::bad_addrinfolist,
+      std::string("socket() failed due to") +
+        std::string(std::strerror(errno)));
   }
 }
 
