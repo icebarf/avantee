@@ -100,3 +100,10 @@ SocketInitError::what() const noexcept
 }
 
 } // namespace icysock_errors
+
+/* specialisation for is_error_code_enum for our own enum type */
+namespace std {
+template<>
+struct is_error_code_enum<icysock_errors::errc> : true_type
+{};
+}
