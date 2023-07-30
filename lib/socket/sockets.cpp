@@ -38,8 +38,11 @@ addressinfo_handle::addressinfo_handle(const std::string_view hostname,
       icysock_errors::errc::getaddrinfo_failure, gai_strerror(rv));
   }
 
-  for (auto p = info; p->ai_next != nullptr; p = p->ai_next)
-    end_p = p;
+  /* want the pointer to the last element of list */
+  auto p = info;
+  for (; p->ai_next != nullptr; p = p->ai_next)
+    ;
+  end_p = p;
 }
 
 addressinfo_handle::~addressinfo_handle()
