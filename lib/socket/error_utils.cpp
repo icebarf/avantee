@@ -51,17 +51,20 @@ make_error_code(errc e) noexcept
 
 /* Exceptions */
 SocketInitError::SocketInitError(const std::string& what_arg)
-  : what_string(what_arg)
+  : ecode()
+  , what_string(what_arg)
 {
 }
 
 SocketInitError::SocketInitError(const char* what_arg)
-  : what_string(what_arg)
+  : ecode()
+  , what_string(what_arg)
 {
 }
 
 SocketInitError::SocketInitError(const errc ec)
   : ecode(make_error_code(ec))
+  , what_string()
 {
 }
 
@@ -80,6 +83,7 @@ SocketInitError::SocketInitError(const errc ec, const char* what_arg)
 SocketInitError::SocketInitError(const SocketInitError& other)
 {
   this->what_string = other.what_string;
+  this->ecode = other.ecode;
 }
 
 SocketInitError&
