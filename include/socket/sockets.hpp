@@ -52,6 +52,7 @@ public:
   addressinfo_handle(const std::string_view hostname,
                      const std::string_view service,
                      const struct socket_hint hint);
+  ~addressinfo_handle();
 
   struct Iterator
   {

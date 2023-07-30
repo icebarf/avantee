@@ -39,6 +39,12 @@ addressinfo_handle::addressinfo_handle(const std::string_view hostname,
     end_p = p;
 }
 
+addressinfo_handle::~addressinfo_handle()
+{
+  freeaddrinfo(info);
+  info = nullptr;
+}
+
 /* addressinfo_handle Iterator implementation */
 
 addressinfo_handle::Iterator::Iterator(
@@ -121,7 +127,7 @@ managed_socket::managed_socket(const string_view hostname,
 
   /* we know the list is most likely empty */
   if (socket_handle == BAD_SOCKET) {
-    throw icysock_errors::SocketInitError(icysock_errors::errc::bad_socket);
+    throw icysock_errors::SocketInitError(icysock_errors::errc::empty_addrinfo);
   }
 }
 
