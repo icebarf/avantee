@@ -5,6 +5,7 @@
 #include "socket/error_utils.hpp"
 
 namespace icysock_errors {
+
 std::error_code
 make_error_code(errc e) noexcept
 {
@@ -22,20 +23,14 @@ make_error_code(errc e) noexcept
           return "Success";
 
         case errc::bad_socket:
-          return std::string(
-                   "Value returned by socket() call (from the berkely api) was "
-                   "bad. Failed to acquire a socket. Errno says: ") +
+          return std::string("Bad Socket: ") +
                  std::string(std::strerror(errno));
 
         case errc::getaddrinfo_failure:
           return std::string("getaddrinfo() failed");
 
         case errc::empty_addrinfo:
-          return std::string("List returned by addrinfo() call (from the "
-                             "berkely api) was "
-                             "empty. It does not seem to contain any valid "
-                             "connections. Errno says: ") +
-                 std::string(std::strerror(errno));
+          return std::string("addrinfo list structure is empty");
 
         default:
           return "Unknown error";
@@ -50,6 +45,7 @@ make_error_code(errc e) noexcept
       return {};
     }
   } category;
+
   return std::error_code(static_cast<int>(e), category);
 }
 
