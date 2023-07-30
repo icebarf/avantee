@@ -1,10 +1,7 @@
 #include "socket/sockets.hpp"
 #include "socket/error_utils.hpp"
 
-#include <cstdio>
-
 using namespace std;
-using std::fprintf;
 
 namespace BetterSockets {
 
@@ -37,7 +34,6 @@ addressinfo_handle::addressinfo_handle(const std::string_view hostname,
 
   int rv = getaddrinfo(hostname.data(), service.data(), &hints, &info);
   if (rv != 0) {
-    fprintf(stderr, "sockets: getaddrinfo(): %s\n", gai_strerror(rv));
     throw icysock_errors::SocketInitError(
       icysock_errors::errc::getaddrinfo_failure, gai_strerror(rv));
   }
@@ -119,26 +115,28 @@ addressinfo_handle::Iterator::operator++(int)
 
 managed_socket::managed_socket()
   : socket_handle()
-  , addressinfo()
+  , addressinfolist()
 {
 }
 
 managed_socket::managed_socket(const string_view hostname,
                                const string_view service,
                                const socket_hint hint)
-  : addressinfo(hostname, service, hint)
+  : addressinfolist(hostname, service, hint)
 {
-  for (auto ainfo : addressinfo) {
+  for (auto ainfo : addressinfolist) {
     socket_handle =
       socket(ainfo.ai_family, ainfo.ai_socktype, ainfo.ai_protocol);
 
     if (socket_handle == BAD_SOCKET) {
-      perror("managed_socket");
+      // socket is bad - what to do
       continue;
     } // if
-  }   // for
 
-  /* we know the list is most likely empty */
+    break;
+  }
+
+  /* we know the entire list is most likely empty */
   if (socket_handle == BAD_SOCKET) {
     throw icysock_errors::SocketInitError(icysock_errors::errc::empty_addrinfo);
   }

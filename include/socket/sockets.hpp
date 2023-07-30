@@ -90,7 +90,7 @@ public:
 class managed_socket
 {
   icysock::icy_socket socket_handle;
-  struct addressinfo_handle addressinfo;
+  struct addressinfo_handle addressinfolist;
 
 public:
   managed_socket();
