@@ -19,6 +19,13 @@ socket_hint::socket_hint(const ip_t i, const sock_t s, const flags_t f)
 }
 
 /* struct adressinfo_handle */
+
+addressinfo_handle::addressinfo_handle()
+  : end_p(nullptr)
+  , info(nullptr)
+{
+}
+
 addressinfo_handle::addressinfo_handle(const std::string_view hostname,
                                        const std::string_view service,
                                        const socket_hint hint)
@@ -109,6 +116,12 @@ addressinfo_handle::Iterator::operator++(int)
 }
 
 /* struct managed_socket */
+
+managed_socket::managed_socket()
+  : socket_handle()
+  , addressinfo()
+{
+}
 
 managed_socket::managed_socket(const string_view hostname,
                                const string_view service,

@@ -49,6 +49,7 @@ private:
 public:
   struct addrinfo* info;
 
+  addressinfo_handle();
   addressinfo_handle(const std::string_view hostname,
                      const std::string_view service,
                      const struct socket_hint hint);
@@ -92,6 +93,7 @@ class managed_socket
   struct addressinfo_handle addressinfo;
 
 public:
+  managed_socket();
   managed_socket(const std::string_view hostname,
                  const std::string_view service,
                  const struct socket_hint hint);
