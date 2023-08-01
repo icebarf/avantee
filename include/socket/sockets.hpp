@@ -2,6 +2,7 @@
 #define ICETEA_SOCKETS_H
 
 #include <iterator>
+#include <netinet/in.h>
 #include <string_view>
 
 #include "generic_sockets.hpp"
@@ -10,34 +11,40 @@ namespace BetterSockets {
 
 /* Socket abstraction */
 
-enum ip_t
+enum class ip_version
 {
   IPv4 = AF_INET,
   IPv6 = AF_INET6,
   IpvAny = AF_UNSPEC,
 };
 
-/* stream sockets and datagram sockets aren't supposed
- * to be strictly TCP and UDP sockets respectively, but
- * we can just assume for our case
- */
-enum sock_t
+enum class sock_kind
 {
-  TCP = SOCK_STREAM,
-  UDP = SOCK_DGRAM,
+  STREAM = SOCK_STREAM,
+  DGRAM = SOCK_DGRAM,
 };
 
-enum flags_t
+enum class sock_flags
 {
-  HOST_IP = AI_PASSIVE,
+  USE_HOST_IP = AI_PASSIVE,
+};
+
+enum class ip_protocol
+{
+  UDP = IPPROTO_UDP,
+  TCP = IPPROTO_TCP,
 };
 
 struct socket_hint
 {
-  enum ip_t hostip_type;
-  enum sock_t socket_type;
-  enum flags_t flags;
-  socket_hint(const ip_t i, const sock_t s, const flags_t f);
+  enum ip_version hostip_version;
+  enum sock_kind socket_kind;
+  enum sock_flags flags;
+  enum ip_protocol ipproto;
+  socket_hint(const ip_version v,
+              const sock_kind k,
+              const sock_flags f,
+              const ip_protocol ipproto);
 };
 
 /* wrapper around addrinfo with iterators */
@@ -54,6 +61,8 @@ public:
                      const std::string_view service,
                      const struct socket_hint hint);
   ~addressinfo_handle();
+
+  addressinfo_handle& operator=(void* info_v);
 
   struct Iterator
   {
@@ -94,6 +103,8 @@ class managed_socket
 
 public:
   managed_socket();
+  managed_socket(icysock::icy_socket s);
+  managed_socket(managed_socket&& ms);
   managed_socket(const std::string_view hostname,
                  const std::string_view service,
                  const struct socket_hint hint);

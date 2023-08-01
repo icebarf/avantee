@@ -2,6 +2,7 @@
 #include <cstring>
 
 #include "socket/error_utils.hpp"
+#include "socket/generic_sockets.hpp"
 #include "socket/sockets.hpp"
 
 using namespace std;
@@ -11,10 +12,14 @@ namespace BetterSockets {
 /*** Socket abstraction implementation ***/
 
 /* struct socket_hint */
-socket_hint::socket_hint(const ip_t i, const sock_t s, const flags_t f)
-  : hostip_type(i)
-  , socket_type(s)
+socket_hint::socket_hint(const ip_version v,
+                         const sock_kind k,
+                         const sock_flags f,
+                         const ip_protocol ipr)
+  : hostip_version(v)
+  , socket_kind(k)
   , flags(f)
+  , ipproto(ipr)
 {
 }
 
@@ -31,9 +36,10 @@ addressinfo_handle::addressinfo_handle(const std::string_view hostname,
                                        const socket_hint hint)
 {
   struct addrinfo hints = {};
-  hints.ai_family = hint.hostip_type;
-  hints.ai_socktype = hint.socket_type;
-  hints.ai_flags = hint.flags;
+  hints.ai_family = static_cast<int>(hint.hostip_version);
+  hints.ai_socktype = static_cast<int>(hint.socket_kind);
+  hints.ai_flags = static_cast<int>(hint.flags);
+  hints.ai_protocol = static_cast<int>(hint.ipproto);
 
   int rv = getaddrinfo(hostname.data(), service.data(), &hints, &info);
   if (rv != 0) {
@@ -52,6 +58,13 @@ addressinfo_handle::~addressinfo_handle()
 {
   freeaddrinfo(info);
   info = nullptr;
+}
+
+addressinfo_handle&
+addressinfo_handle::operator=(void* info_v)
+{
+  this->info = (struct addrinfo*)info_v;
+  return *this;
 }
 
 /* addressinfo_handle Iterator implementation */
@@ -123,6 +136,19 @@ managed_socket::managed_socket()
   : socket_handle()
   , addressinfolist()
 {
+}
+
+managed_socket::managed_socket(icysock::icy_socket s)
+  : socket_handle(s)
+  , addressinfolist()
+{
+}
+
+managed_socket::managed_socket(managed_socket&& ms)
+  : socket_handle(ms.socket_handle)
+  , addressinfolist(ms.addressinfolist)
+{
+  ms.addressinfolist = nullptr;
 }
 
 managed_socket::managed_socket(const string_view hostname,
