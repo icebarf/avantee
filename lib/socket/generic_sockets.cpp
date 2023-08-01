@@ -18,7 +18,7 @@
 #include <cstdio>
 #include <exception>
 
-#include "generic_sockets.hpp"
+#include "socket/generic_sockets.hpp"
 
 namespace icysock {
 
