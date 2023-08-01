@@ -35,6 +35,9 @@ make_error_code(errc e) noexcept
         case errc::setsockopt_failure:
           return std::string("setsockopt() failed");
 
+        case errc::bind_failure:
+          return std::string("bind() failed");
+
         default:
           return "Unknown error";
       }
@@ -106,7 +109,7 @@ SocketInitError::what() const noexcept
   return what_string.c_str();
 }
 
-	/* APIError */
+/* APIError */
 APIError::APIError(const std::string& what_arg)
   : ecode()
   , what_string(what_arg)
@@ -156,7 +159,6 @@ APIError::what() const noexcept
 {
   return what_string.c_str();
 }
-
 
 } // namespace icysock_errors
 

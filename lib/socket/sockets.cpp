@@ -165,7 +165,7 @@ managed_socket::managed_socket(const string_view hostname,
       // better try the next one until it works... or all of them fail.
       continue;
     }
-
+    valid_addr = ainfo;
     break;
   }
 
@@ -178,4 +178,24 @@ managed_socket::managed_socket(const string_view hostname,
   }
 }
 
+void
+managed_socket::bind_socket(bool reuse_socket)
+{
+  if (reuse_socket) {
+    int enable = 1;
+    if (setsockopt(
+          socket_handle, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) ==
+        SOCK_ERR) {
+      throw icysock_errors::APIError(icysock_errors::errc::setsockopt_failure,
+                                     std::string(std::strerror(errno)));
+    }
+  }
+
+  if (bind(socket_handle, valid_addr.ai_addr, valid_addr.ai_addrlen) ==
+      SOCK_ERR) {
+    throw icysock_errors::APIError(icysock_errors::errc::bind_failure,
+                                   std::string(std::strerror(errno)));
+  }
 }
+
+} // namespace BetterSockets

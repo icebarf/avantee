@@ -21,6 +21,7 @@ enum class errc
   bad_addrinfolist,
   getaddrinfo_failure,
   setsockopt_failure,
+	bind_failure,
 };
 
 std::error_code
@@ -67,7 +68,6 @@ public:
 
   const char* what() const noexcept override;
 };
-
 
 }
 
