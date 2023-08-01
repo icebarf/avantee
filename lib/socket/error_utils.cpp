@@ -38,6 +38,9 @@ make_error_code(errc e) noexcept
         case errc::bind_failure:
           return std::string("bind() failed");
 
+        case errc::connect_failure:
+          return std::string("connect() failed");
+
         default:
           return "Unknown error";
       }

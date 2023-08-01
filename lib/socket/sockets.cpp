@@ -1,5 +1,6 @@
 #include <cerrno>
 #include <cstring>
+#include <sys/socket.h>
 
 #include "socket/error_utils.hpp"
 #include "socket/generic_sockets.hpp"
@@ -194,6 +195,16 @@ managed_socket::bind_socket(bool reuse_socket)
   if (bind(socket_handle, valid_addr.ai_addr, valid_addr.ai_addrlen) ==
       SOCK_ERR) {
     throw icysock_errors::APIError(icysock_errors::errc::bind_failure,
+                                   std::string(std::strerror(errno)));
+  }
+}
+
+void
+managed_socket::connect_socket()
+{
+  if (connect(socket_handle, valid_addr.ai_addr, valid_addr.ai_addrlen) ==
+      SOCK_ERR) {
+    throw icysock_errors::APIError(icysock_errors::errc::connect_failure,
                                    std::string(std::strerror(errno)));
   }
 }

@@ -100,7 +100,7 @@ class managed_socket
 {
   icysock::icy_socket socket_handle;
   struct addressinfo_handle addressinfolist;
-	struct addrinfo valid_addr;
+  struct addrinfo valid_addr;
 
 public:
   managed_socket();
@@ -110,7 +110,8 @@ public:
                  const std::string_view service,
                  const struct socket_hint hint);
 
-	void bind_socket(bool reuse_socket = true);
+  void bind_socket(bool reuse_socket = true);
+  void connect_socket();
 
 }; // class ManagedSocket
 

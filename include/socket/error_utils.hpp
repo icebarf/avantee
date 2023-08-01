@@ -22,6 +22,7 @@ enum class errc
   getaddrinfo_failure,
   setsockopt_failure,
 	bind_failure,
+	connect_failure,
 };
 
 std::error_code
