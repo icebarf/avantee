@@ -32,6 +32,9 @@ make_error_code(errc e) noexcept
         case errc::bad_addrinfolist:
           return std::string("addrinfo list structure is bad");
 
+        case errc::setsockopt_failure:
+          return std::string("setsockopt() failed");
+
         default:
           return "Unknown error";
       }
@@ -50,6 +53,9 @@ make_error_code(errc e) noexcept
 }
 
 /* Exceptions */
+
+/* SocketInitError*/
+
 SocketInitError::SocketInitError(const std::string& what_arg)
   : ecode()
   , what_string(what_arg)
@@ -99,6 +105,58 @@ SocketInitError::what() const noexcept
 {
   return what_string.c_str();
 }
+
+	/* APIError */
+APIError::APIError(const std::string& what_arg)
+  : ecode()
+  , what_string(what_arg)
+{
+}
+
+APIError::APIError(const char* what_arg)
+  : ecode()
+  , what_string(what_arg)
+{
+}
+
+APIError::APIError(const errc ec)
+  : ecode(make_error_code(ec))
+  , what_string()
+{
+}
+
+APIError::APIError(const errc ec, std::string what_arg)
+  : ecode(make_error_code(ec))
+  , what_string(what_arg)
+{
+}
+
+APIError::APIError(const errc ec, const char* what_arg)
+  : ecode(make_error_code(ec))
+  , what_string(what_arg)
+{
+}
+
+APIError::APIError(const APIError& other)
+{
+  this->what_string = other.what_string;
+  this->ecode = other.ecode;
+}
+
+APIError&
+APIError::operator=(const APIError& other) noexcept
+{
+  this->what_string = other.what_string;
+  this->ecode = other.ecode;
+  return *this;
+}
+
+const char*
+APIError::what() const noexcept
+{
+  return what_string.c_str();
+}
+
 
 } // namespace icysock_errors
 

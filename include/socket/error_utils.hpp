@@ -1,6 +1,7 @@
 #ifndef ICETEA_ERROR_UTILS_H
 #define ICETEA_ERROR_UTILS_H
 
+#include <exception>
 #include <string>
 #include <system_error>
 
@@ -19,6 +20,7 @@ enum class errc
   bad_socket,
   bad_addrinfolist,
   getaddrinfo_failure,
+  setsockopt_failure,
 };
 
 std::error_code
@@ -46,6 +48,26 @@ public:
 
   const char* what() const noexcept override;
 };
+
+class APIError : public std::exception
+{
+private:
+  std::error_code ecode;
+  std::string what_string;
+
+public:
+  explicit APIError(const std::string& what_arg);
+  explicit APIError(const char* what_arg);
+  APIError(const APIError& other);
+  APIError(const errc ec);
+  APIError(const errc ec, std::string what_arg);
+  APIError(const errc ec, const char* what_arg);
+
+  APIError& operator=(const APIError& other) noexcept;
+
+  const char* what() const noexcept override;
+};
+
 
 }
 
