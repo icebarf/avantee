@@ -9,8 +9,17 @@
 
 namespace BetterSockets {
 
-/* Socket abstraction */
+/* Signed return type for size */
+using size = ssize_t;
 
+enum class TransmissionEnd
+{
+  NO_RECV = SHUT_RD,
+  NO_TRANS = SHUT_WR,
+  EVERYTHING = SHUT_RDWR,
+};
+
+/* Socket abstraction */
 enum class ip_version
 {
   IPv4 = AF_INET,
@@ -57,8 +66,8 @@ public:
   struct addrinfo* info;
 
   addressinfo_handle();
-  addressinfo_handle(const std::string_view hostname,
-                     const std::string_view service,
+  addressinfo_handle(const std::string hostname,
+                     const std::string service,
                      const struct socket_hint hint);
   ~addressinfo_handle();
 
@@ -98,6 +107,8 @@ public:
  */
 class managed_socket
 {
+  bool empty;
+  bool is_listener;
   icysock::icy_socket socket_handle;
   struct addressinfo_handle addressinfolist;
   struct addrinfo valid_addr;
@@ -106,12 +117,30 @@ public:
   managed_socket();
   managed_socket(icysock::icy_socket s);
   managed_socket(managed_socket&& ms);
-  managed_socket(const std::string_view hostname,
-                 const std::string_view service,
-                 const struct socket_hint hint);
+  managed_socket(const struct socket_hint hint,
+                 const std::string service,
+                 const std::string hostname = "");
 
-  void bind_socket(bool reuse_socket = true);
-  void connect_socket();
+  ~managed_socket();
+  bool is_empty();
+
+  void binds(bool reuse_socket = true);
+  void connects();
+  size sends(std::string_view buf, int flags = 0);
+  void shutdowns(enum TransmissionEnd reason);
+  size receive(char* buf, size s, int flags = 0);
+  void listens();
+
+  // `man 2 accept` takes 3 arguments, two of
+  // which will contain relevant information
+  // about the peer connection. Currently I
+  // have no abstraction for the `struct
+  // sockaddr*` structure therefore we will
+  // NULL those arguments by defualt. As soon
+  // as I have a proper thought out solution, I
+  // shall implement it.
+  [[nodiscard("Accepted socket must be used.")]] icysock::icy_socket accepts(
+    /*, arg2, arg3 */);
 
 }; // class ManagedSocket
 

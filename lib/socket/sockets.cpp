@@ -32,8 +32,8 @@ addressinfo_handle::addressinfo_handle()
 {
 }
 
-addressinfo_handle::addressinfo_handle(const std::string_view hostname,
-                                       const std::string_view service,
+addressinfo_handle::addressinfo_handle(const string hostname,
+                                       const string service,
                                        const socket_hint hint)
 {
   struct addrinfo hints = {};
@@ -42,7 +42,8 @@ addressinfo_handle::addressinfo_handle(const std::string_view hostname,
   hints.ai_flags = static_cast<int>(hint.flags);
   hints.ai_protocol = static_cast<int>(hint.ipproto);
 
-  int rv = getaddrinfo(hostname.data(), service.data(), &hints, &info);
+  int rv = getaddrinfo(
+    hostname.empty() ? NULL : hostname.data(), service.data(), &hints, &info);
   if (rv != 0) {
     throw icysock_errors::SocketInitError(
       icysock_errors::errc::getaddrinfo_failure, gai_strerror(rv));
@@ -134,41 +135,62 @@ addressinfo_handle::Iterator::operator++(int)
 /* struct managed_socket */
 
 managed_socket::managed_socket()
-  : socket_handle()
+  : empty(true)
+  , is_listener(false)
+  , socket_handle()
   , addressinfolist()
 {
 }
 
 managed_socket::managed_socket(icysock::icy_socket s)
-  : socket_handle(s)
+  : empty(false)
+  , is_listener(false)
+  , socket_handle(s)
   , addressinfolist()
 {
+  if (s == SOCK_ERR)
+    throw icysock_errors::SocketInitError(
+      icysock_errors::errc::bad_socket,
+      std::string("Creation of managed_socket failed. Invalid argument."));
 }
 
 managed_socket::managed_socket(managed_socket&& ms)
-  : socket_handle(ms.socket_handle)
+  : empty(ms.empty)
+  , is_listener(ms.is_listener)
+  , socket_handle(ms.socket_handle)
   , addressinfolist(ms.addressinfolist)
 {
   ms.addressinfolist = nullptr;
 }
 
-managed_socket::managed_socket(const string_view hostname,
-                               const string_view service,
-                               const socket_hint hint)
-  : addressinfolist(hostname, service, hint)
+managed_socket::managed_socket(const struct socket_hint hint,
+                               const string service,
+                               const string hostname)
+  : empty(false)
+  , is_listener(false)
+  , addressinfolist(hostname, service, hint)
 {
-  for (auto ainfo : addressinfolist) {
-    socket_handle =
-      socket(ainfo.ai_family, ainfo.ai_socktype, ainfo.ai_protocol);
+  /* This commented out snippet of code needs to be fixed.
+   * I think that the iterators for addresinfo_handle structure aare broken.
+   * But I shall take another look at it after I'm done testing out some code.
+   * Then this shall be fixed.
+   */
+  // for (struct addrinfo ainfo : addressinfolist) {
+  //   socket_handle =
+  //     socket(ainfo.ai_family, ainfo.ai_socktype, ainfo.ai_protocol);
 
-    if (socket_handle == BAD_SOCKET) {
-      // socket is bad, this addrinfo structure didn't work
-      // better try the next one until it works... or all of them fail.
-      continue;
-    }
-    valid_addr = ainfo;
-    break;
-  }
+  //   // socket is bad, this addrinfo structure didn't work
+  //   // better try the next one until it works... or all of them fail.
+  //   if (socket_handle == BAD_SOCKET)
+  //     continue;
+
+  //   valid_addr = ainfo;
+  //   break;
+  // }
+  socket_handle = socket(addressinfolist.info->ai_family,
+                         addressinfolist.info->ai_socktype,
+                         addressinfolist.info->ai_protocol);
+  valid_addr = *addressinfolist.info;
 
   if (socket_handle == BAD_SOCKET) {
     /* we know the entire list is most likely empty */
@@ -179,8 +201,22 @@ managed_socket::managed_socket(const string_view hostname,
   }
 }
 
+managed_socket::~managed_socket()
+{
+  this->shutdowns(BetterSockets::TransmissionEnd::EVERYTHING);
+  icysock::close_socket(socket_handle);
+  empty = true;
+  is_listener = false;
+}
+
+bool
+managed_socket::is_empty()
+{
+  return empty;
+}
+
 void
-managed_socket::bind_socket(bool reuse_socket)
+managed_socket::binds(bool reuse_socket)
 {
   if (reuse_socket) {
     int enable = 1;
@@ -200,13 +236,72 @@ managed_socket::bind_socket(bool reuse_socket)
 }
 
 void
-managed_socket::connect_socket()
+managed_socket::connects()
 {
   if (connect(socket_handle, valid_addr.ai_addr, valid_addr.ai_addrlen) ==
       SOCK_ERR) {
     throw icysock_errors::APIError(icysock_errors::errc::connect_failure,
                                    std::string(std::strerror(errno)));
   }
+}
+
+BetterSockets::size
+managed_socket::sends(std::string_view buf, int flags)
+{
+  BetterSockets::size r = send(socket_handle, buf.data(), buf.length(), flags);
+  if (r == SOCK_ERR) {
+    throw icysock_errors::APIError(icysock_errors::errc::send_failure,
+                                   std::string(std::strerror(errno)));
+  }
+
+  return r;
+}
+
+void
+managed_socket::shutdowns(enum BetterSockets::TransmissionEnd reason)
+{
+  if (shutdown(socket_handle, static_cast<int>(reason)) == SOCK_ERR) {
+    throw icysock_errors::APIError(icysock_errors::errc::shutdown_failure,
+                                   std::string(std::strerror(errno)));
+  }
+}
+
+BetterSockets::size
+managed_socket::receive(char* buf, BetterSockets::size s, int flags)
+{
+  BetterSockets::size r = recv(socket_handle, buf, (size_t)s, flags);
+  if (r == SOCK_ERR) {
+    throw icysock_errors::APIError(icysock_errors::errc::receieve_failure,
+                                   std::string(std::strerror(errno)));
+  }
+  return r;
+}
+
+void
+managed_socket::listens()
+{
+  if (listen(socket_handle, SOMAXCONN) == SOCK_ERR) {
+    throw icysock_errors::APIError(icysock_errors::errc::listen_failure,
+                                   std::string(std::strerror(errno)));
+  }
+  is_listener = true;
+}
+
+/* implement arg2 and arg3 at a later date, more info in header file. */
+icysock::icy_socket managed_socket::accepts(/*, arg2, arg3 */)
+{
+  /* Only call accept() on the socket if listen() has been called before.
+   * Otherwise do nothing and return an invalid socket. */
+  if (is_listener) {
+    icysock::icy_socket accepted = accept(socket_handle, nullptr, nullptr);
+    if (accepted == SOCK_ERR) {
+      throw icysock_errors::APIError(icysock_errors::errc::accept_failure,
+                                     std::string(std::strerror(errno)));
+    }
+    return accepted;
+  }
+
+  return SOCK_ERR;
 }
 
 } // namespace BetterSockets
