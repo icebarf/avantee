@@ -41,6 +41,21 @@ make_error_code(errc e) noexcept
         case errc::connect_failure:
           return std::string("connect() failed");
 
+        case errc::send_failure:
+          return std::string("send() failed");
+
+        case errc::shutdown_failure:
+          return std::string("shutdown() failed");
+
+        case errc::receieve_failure:
+          return std::string("shutdown() failed");
+
+        case errc::listen_failure:
+          return std::string("listen() failed");
+
+        case errc::accept_failure:
+          return std::string("accept() failed");
+
         default:
           return "Unknown error";
       }

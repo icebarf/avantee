@@ -21,8 +21,13 @@ enum class errc
   bad_addrinfolist,
   getaddrinfo_failure,
   setsockopt_failure,
-	bind_failure,
-	connect_failure,
+  bind_failure,
+  connect_failure,
+  send_failure,
+  shutdown_failure,
+  receieve_failure,
+  listen_failure,
+  accept_failure,
 };
 
 std::error_code
