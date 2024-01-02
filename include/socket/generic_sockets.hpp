@@ -18,9 +18,10 @@
 #ifndef SOCKET_ABSTACTION_H
 #define SOCKET_ABSTACTION_H
 
-/* The goal of this thin wrapper is to make the known berkely socket
- * api to be usable on windows and any other platform. Known different
- * types are aliased, and other values may be specified as preprocessor macros
+/* The goal of this thin wrapper is to not bother with lower level C
+ * api. Things know to be different on platform such as windows -
+ * types, functions are aliased or wrapped upon, and other values may be
+ * specified as preprocessor macros
  */
 
 /* neatly avoid checking this everywhere */
