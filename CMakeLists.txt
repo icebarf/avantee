@@ -8,23 +8,27 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 add_executable(server)
-target_sources(server PRIVATE lib/socket/generic_sockets.cpp
-                          PRIVATE testing/test-server.cpp
+target_sources(server PUBLIC lib/socket/error_utils.cpp
+                      PUBLIC lib/socket/generic_sockets.cpp
+                      PUBLIC lib/socket/sockets.cpp
+                      PUBLIC testing/test-server.cpp
               )
 target_include_directories(server PRIVATE include/)
 if(${CMAKE_HOST_WIN32})
   target_link_libraries(server ws2_32 )
 endif()
 target_compile_options(server PUBLIC -Wall -Wextra -Werror -Wpedantic
-                                      -Wshadow -Wconversion)
+                                      -Wshadow -Wconversion -g -Og)
 
 add_executable(client)
 target_sources(client PRIVATE lib/socket/generic_sockets.cpp
-                          PRIVATE testing/test-client.cpp
+                      PRIVATE lib/socket/error_utils.cpp
+                      PUBLIC lib/socket/sockets.cpp
+                      PRIVATE testing/test-client.cpp
               )
 if(${CMAKE_HOST_WIN32})
   target_link_libraries(client ws2_32 mswsock advapi32)
 endif()
 target_include_directories(client PRIVATE include/)
 target_compile_options(client PUBLIC -Wall -Wextra -Werror -Wpedantic
-                                      -Wshadow -Wconversion)
+                                      -Wshadow -Wconversion -g -Og)
