@@ -26,14 +26,14 @@ main(int argc, char** argv)
   sock.connects();
 
   const char* sendbuf = "this is a test";
-  BetterSockets::size iResult = sock.sends(sendbuf, 0);
+  icysock::ssize iResult = sock.sends(sendbuf, 0);
   printf("Bytes sent: %ld\n", iResult);
 
   std::array<char, BUFLEN> recvbuf{ 0 };
   do {
     try {
       iResult = sock.receive(recvbuf.data(), recvbuf.size(), 0);
-    } catch (const icysock_errors::APIError& e) {
+    } catch (const icysock::errors::APIError& e) {
       fprintf(stderr, "%s\n", e.what());
       continue;
     };

@@ -45,8 +45,8 @@ addressinfo_handle::addressinfo_handle(const string hostname,
   int rv = getaddrinfo(
     hostname.empty() ? NULL : hostname.data(), service.data(), &hints, &info);
   if (rv != 0) {
-    throw icysock_errors::SocketInitError(
-      icysock_errors::errc::getaddrinfo_failure, gai_strerror(rv));
+    throw icysock::errors::SocketInitError(
+      icysock::errors::errc::getaddrinfo_failure, gai_strerror(rv));
   }
 
   /* want the pointer to the last element of list */
@@ -142,15 +142,15 @@ managed_socket::managed_socket()
 {
 }
 
-managed_socket::managed_socket(icysock::icy_socket s)
+managed_socket::managed_socket(icysock::gsocket s)
   : empty(false)
   , is_listener(false)
   , socket_handle(s)
   , addressinfolist()
 {
   if (s == SOCK_ERR)
-    throw icysock_errors::SocketInitError(
-      icysock_errors::errc::bad_socket,
+    throw icysock::errors::SocketInitError(
+      icysock::errors::errc::bad_socket,
       std::string("Creation of managed_socket failed. Invalid argument."));
 }
 
@@ -194,8 +194,8 @@ managed_socket::managed_socket(const struct socket_hint hint,
 
   if (socket_handle == BAD_SOCKET) {
     /* we know the entire list is most likely empty */
-    throw icysock_errors::SocketInitError(
-      icysock_errors::errc::bad_addrinfolist,
+    throw icysock::errors::SocketInitError(
+      icysock::errors::errc::bad_addrinfolist,
       std::string("socket() failed due to") +
         std::string(std::strerror(errno)));
   }
@@ -203,6 +203,7 @@ managed_socket::managed_socket(const struct socket_hint hint,
 
 managed_socket::~managed_socket()
 {
+  // if(is_listener) unlink(*name)
   this->shutdowns(BetterSockets::TransmissionEnd::EVERYTHING);
   icysock::close_socket(socket_handle);
   empty = true;
@@ -223,15 +224,15 @@ managed_socket::binds(bool reuse_socket)
     if (setsockopt(
           socket_handle, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) ==
         SOCK_ERR) {
-      throw icysock_errors::APIError(icysock_errors::errc::setsockopt_failure,
-                                     std::string(std::strerror(errno)));
+      throw icysock::errors::APIError(icysock::errors::errc::setsockopt_failure,
+                                      std::string(std::strerror(errno)));
     }
   }
 
   if (bind(socket_handle, valid_addr.ai_addr, valid_addr.ai_addrlen) ==
       SOCK_ERR) {
-    throw icysock_errors::APIError(icysock_errors::errc::bind_failure,
-                                   std::string(std::strerror(errno)));
+    throw icysock::errors::APIError(icysock::errors::errc::bind_failure,
+                                    std::string(std::strerror(errno)));
   }
 }
 
@@ -240,18 +241,18 @@ managed_socket::connects()
 {
   if (connect(socket_handle, valid_addr.ai_addr, valid_addr.ai_addrlen) ==
       SOCK_ERR) {
-    throw icysock_errors::APIError(icysock_errors::errc::connect_failure,
-                                   std::string(std::strerror(errno)));
+    throw icysock::errors::APIError(icysock::errors::errc::connect_failure,
+                                    std::string(std::strerror(errno)));
   }
 }
 
-BetterSockets::size
+icysock::ssize
 managed_socket::sends(std::string_view buf, int flags)
 {
-  BetterSockets::size r = send(socket_handle, buf.data(), buf.length(), flags);
+  icysock::ssize r = send(socket_handle, buf.data(), buf.length(), flags);
   if (r == SOCK_ERR) {
-    throw icysock_errors::APIError(icysock_errors::errc::send_failure,
-                                   std::string(std::strerror(errno)));
+    throw icysock::errors::APIError(icysock::errors::errc::send_failure,
+                                    std::string(std::strerror(errno)));
   }
 
   return r;
@@ -261,18 +262,18 @@ void
 managed_socket::shutdowns(enum BetterSockets::TransmissionEnd reason)
 {
   if (shutdown(socket_handle, static_cast<int>(reason)) == SOCK_ERR) {
-    throw icysock_errors::APIError(icysock_errors::errc::shutdown_failure,
-                                   std::string(std::strerror(errno)));
+    throw icysock::errors::APIError(icysock::errors::errc::shutdown_failure,
+                                    std::string(std::strerror(errno)));
   }
 }
 
-BetterSockets::size
-managed_socket::receive(char* buf, BetterSockets::size s, int flags)
+icysock::ssize
+managed_socket::receive(char* buf, icysock::ssize s, int flags)
 {
-  BetterSockets::size r = recv(socket_handle, buf, (size_t)s, flags);
+  icysock::ssize r = recv(socket_handle, buf, (size_t)s, flags);
   if (r == SOCK_ERR) {
-    throw icysock_errors::APIError(icysock_errors::errc::receieve_failure,
-                                   std::string(std::strerror(errno)));
+    throw icysock::errors::APIError(icysock::errors::errc::receieve_failure,
+                                    std::string(std::strerror(errno)));
   }
   return r;
 }
@@ -281,22 +282,22 @@ void
 managed_socket::listens()
 {
   if (listen(socket_handle, SOMAXCONN) == SOCK_ERR) {
-    throw icysock_errors::APIError(icysock_errors::errc::listen_failure,
-                                   std::string(std::strerror(errno)));
+    throw icysock::errors::APIError(icysock::errors::errc::listen_failure,
+                                    std::string(std::strerror(errno)));
   }
   is_listener = true;
 }
 
 /* implement arg2 and arg3 at a later date, more info in header file. */
-icysock::icy_socket managed_socket::accepts(/*, arg2, arg3 */)
+icysock::gsocket managed_socket::accepts(/*, arg2, arg3 */)
 {
   /* Only call accept() on the socket if listen() has been called before.
    * Otherwise do nothing and return an invalid socket. */
   if (is_listener) {
-    icysock::icy_socket accepted = accept(socket_handle, nullptr, nullptr);
+    icysock::gsocket accepted = accept(socket_handle, nullptr, nullptr);
     if (accepted == SOCK_ERR) {
-      throw icysock_errors::APIError(icysock_errors::errc::accept_failure,
-                                     std::string(std::strerror(errno)));
+      throw icysock::errors::APIError(icysock::errors::errc::accept_failure,
+                                      std::string(std::strerror(errno)));
     }
     return accepted;
   }

@@ -26,8 +26,8 @@ main()
   ListenSock.listens();
 
   BetterSockets::managed_socket ClientSock(ListenSock.accepts());
-  BetterSockets::size iResult;
-  BetterSockets::size iSendResult;
+  icysock::ssize iResult;
+  icysock::ssize iSendResult;
 
   std::array<char, BUFLEN> recvbuf = { 0 };
   // Receive until the peer shuts down the connection

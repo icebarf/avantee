@@ -9,9 +9,6 @@
 
 namespace BetterSockets {
 
-/* Signed return type for size */
-using size = ssize_t;
-
 enum class TransmissionEnd
 {
   NO_RECV = SHUT_RD,
@@ -109,13 +106,13 @@ class managed_socket
 {
   bool empty;
   bool is_listener;
-  icysock::icy_socket socket_handle;
+  icysock::gsocket socket_handle;
   struct addressinfo_handle addressinfolist;
   struct addrinfo valid_addr;
 
 public:
   managed_socket();
-  managed_socket(icysock::icy_socket s);
+  managed_socket(icysock::gsocket s);
   managed_socket(managed_socket&& ms);
   managed_socket(const struct socket_hint hint,
                  const std::string service,
@@ -123,13 +120,6 @@ public:
 
   ~managed_socket();
   bool is_empty();
-
-  void binds(bool reuse_socket = true);
-  void connects();
-  size sends(std::string_view buf, int flags = 0);
-  void shutdowns(enum TransmissionEnd reason);
-  size receive(char* buf, size s, int flags = 0);
-  void listens();
 
   // `man 2 accept` takes 3 arguments, two of
   // which will contain relevant information
@@ -139,8 +129,15 @@ public:
   // NULL those arguments by defualt. As soon
   // as I have a proper thought out solution, I
   // shall implement it.
-  [[nodiscard("Accepted socket must be used.")]] icysock::icy_socket accepts(
-    /*, arg2, arg3 */);
+  [[nodiscard("Accepted socket must be used.")]] icysock::gsocket accepts();
+  void binds(bool reuse_socket = true);
+  void connects();
+  void
+  listens(); // This will call binds() for you. This is because normally
+             // the ccept()'ing socket needs to be "bound" to some socket addr.
+  icysock::ssize receive(char* buf, icysock::ssize s, int flags = 0);
+  icysock::ssize sends(std::string_view buf, int flags = 0);
+  void shutdowns(enum TransmissionEnd reason);
 
 }; // class ManagedSocket
 
