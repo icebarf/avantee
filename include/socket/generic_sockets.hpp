@@ -68,13 +68,19 @@ namespace icysock {
 /* introduce alias types on other platform */
 using SOCKDATA = int;
 using icy_socket = int;
+
 }
 
 #endif
 
+#include <cstdint>
 #include <errno.h>
 
 namespace icysock {
+
+/* Signed return type for size */
+using ssize = std::intmax_t;
+using size = std::uintmax_t;
 
 /* initialise the sockets library
  * this is only needed on windows but this should be called

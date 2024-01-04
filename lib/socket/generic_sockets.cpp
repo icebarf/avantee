@@ -22,7 +22,7 @@
 
 namespace icysock {
 
-SOCKDATA
+sockdata
 init()
 {
   int result = 0;
@@ -71,7 +71,7 @@ terminate()
 }
 
 int
-close_socket(icy_socket s)
+close_socket(gsocket s)
 {
 #if defined(ICY_ON_WINDOWS)
   return closesocket(s);
