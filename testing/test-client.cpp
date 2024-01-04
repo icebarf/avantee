@@ -33,7 +33,7 @@ main(int argc, char** argv)
       continue;
     };
     if (iResult > 0)
-      fprintf(stdout, "Bytes receieved: %ld\n", iResult);
+      fprintf(stdout, "Bytes receieved: %ld\n%s\n", iResult, recvbuf.data());
     else if (iResult == 0)
       fprintf(stdout, "Connection closed\n");
 
