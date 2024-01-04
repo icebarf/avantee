@@ -5,7 +5,7 @@
 #include <string>
 #include <system_error>
 
-namespace icysock_errors {
+namespace icysock::errors {
 
 /* primitives for error handling
  * these will be used in making the abstraction

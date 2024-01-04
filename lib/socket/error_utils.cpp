@@ -4,7 +4,7 @@
 
 #include "socket/error_utils.hpp"
 
-namespace icysock_errors {
+namespace icysock::errors {
 
 std::error_code
 make_error_code(errc e) noexcept
@@ -183,6 +183,6 @@ APIError::what() const noexcept
 /* specialisation for is_error_code_enum for our own enum type */
 namespace std {
 template<>
-struct is_error_code_enum<icysock_errors::errc> : true_type
+struct is_error_code_enum<icysock::errors::errc> : true_type
 {};
 }
