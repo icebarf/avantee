@@ -82,7 +82,7 @@ close_socket(gsocket s)
 }
 
 void*
-zero(char* p, size len)
+zero(void* p, size len)
 {
 #if defined(ICY_ON_WINDOWS)
   ZeroMemory(p, len);

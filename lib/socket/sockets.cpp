@@ -36,7 +36,8 @@ addressinfo_handle::addressinfo_handle(const string hostname,
                                        const string service,
                                        const socket_hint hint)
 {
-  struct addrinfo hints = {};
+  struct addrinfo hints;
+  icysock::zero(&hints, sizeof(hints));
   hints.ai_family = static_cast<int>(hint.hostip_version);
   hints.ai_socktype = static_cast<int>(hint.socket_kind);
   hints.ai_flags = static_cast<int>(hint.flags);

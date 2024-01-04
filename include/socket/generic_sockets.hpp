@@ -108,7 +108,7 @@ close_socket(gsocket s);
 
 /* Zero out the memory in range [p+0, p+len) */
 void*
-Zero(char* p, size len);
+zero(void* p, size len);
 
 }
 #endif
