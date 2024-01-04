@@ -16,6 +16,7 @@
  */
 
 #include <cstdio>
+#include <cstring>
 #include <exception>
 
 #include "socket/generic_sockets.hpp"
@@ -77,6 +78,17 @@ close_socket(gsocket s)
   return closesocket(s);
 #else
   return close(s);
+#endif
+}
+
+void*
+zero(char* p, size len)
+{
+#if defined(ICY_ON_WINDOWS)
+  ZeroMemory(p, len);
+  return p;
+#else
+  return memset(p, 0, len);
 #endif
 }
 

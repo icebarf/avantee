@@ -31,7 +31,7 @@
 #define ICY_ON_WINDOWS
 #endif
 
-#ifdef ICY_ON_WINDOWS
+#if defined(ICY_ON_WINDOWS)
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -105,6 +105,10 @@ terminate();
  */
 int
 close_socket(gsocket s);
+
+/* Zero out the memory in range [p+0, p+len) */
+void*
+Zero(char* p, size len);
 
 }
 #endif
