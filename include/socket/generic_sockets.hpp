@@ -47,8 +47,8 @@ namespace icysock {
 #define SHUT_RDWR SD_BOTH
 
 /* introduce alias types on windows */
-using SOCKDATA = WSADATA;
-using icy_socket = SOCKET;
+using sockdata = WSADATA;
+using gsocket = SOCKET;
 }
 
 #else
@@ -66,8 +66,8 @@ namespace icysock {
 #define SOCK_ERR -1
 
 /* introduce alias types on other platform */
-using SOCKDATA = int;
-using icy_socket = int;
+using sockdata = int;
+using gsocket = int;
 
 }
 
@@ -88,7 +88,7 @@ using size = std::uintmax_t;
  * additional structures and variables not part of the windows
  * API
  */
-SOCKDATA
+[[maybe_unused]] sockdata
 init();
 
 /* terminate the sockets library
@@ -104,7 +104,7 @@ terminate();
  * API calls
  */
 int
-close_socket(icy_socket s);
+close_socket(gsocket s);
 
 }
 #endif
