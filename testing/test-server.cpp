@@ -5,11 +5,6 @@
 #include <array>
 #include <cstdio>
 
-#ifndef ICY_ON_WINDOWS
-#include <string.h>
-#define ZeroMemory(ptr, n) memset(ptr, 0, n);
-#endif
-
 #define PORT "6900"
 #define BUFLEN 512
 
