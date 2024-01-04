@@ -98,6 +98,15 @@ addressinfo_handle::Iterator::operator++()
   return *this;
 }
 
+/* postfix increment */
+addressinfo_handle::Iterator
+addressinfo_handle::Iterator::operator++(int)
+{
+  Iterator old = *this;
+  ++(*this); // call prefix increment
+  return old;
+}
+
 bool
 operator==(const addressinfo_handle::Iterator& lhs,
            const addressinfo_handle::Iterator& rhs)
@@ -121,30 +130,23 @@ addressinfo_handle::begin()
 addressinfo_handle::Iterator
 addressinfo_handle::end()
 {
-  return Iterator(end_p);
-}
-
-/* postfix increment */
-addressinfo_handle::Iterator
-addressinfo_handle::Iterator::operator++(int)
-{
-  Iterator old = *this;
-  ++(*this); // call prefix increment
-  return old;
+  return Iterator(end_p + 1);
 }
 
 /* struct managed_socket */
 
 managed_socket::managed_socket()
-  : empty(true)
+  : binds_called(false)
+  , empty(false)
   , is_listener(false)
-  , socket_handle()
+  , socket_handle(BAD_SOCKET)
   , addressinfolist()
 {
 }
 
 managed_socket::managed_socket(icysock::gsocket s)
-  : empty(false)
+  : binds_called(false)
+  , empty(false)
   , is_listener(false)
   , socket_handle(s)
   , addressinfolist()
@@ -156,7 +158,8 @@ managed_socket::managed_socket(icysock::gsocket s)
 }
 
 managed_socket::managed_socket(managed_socket&& ms)
-  : empty(ms.empty)
+  : binds_called(ms.binds_called)
+  , empty(ms.empty)
   , is_listener(ms.is_listener)
   , socket_handle(ms.socket_handle)
   , addressinfolist(ms.addressinfolist)
@@ -167,8 +170,10 @@ managed_socket::managed_socket(managed_socket&& ms)
 managed_socket::managed_socket(const struct socket_hint hint,
                                const string service,
                                const string hostname)
-  : empty(false)
+  : binds_called(false)
+  , empty(false)
   , is_listener(false)
+  , socket_handle{ BAD_SOCKET }
   , addressinfolist(hostname, service, hint)
 {
   /* This commented out snippet of code needs to be fixed.
@@ -176,22 +181,18 @@ managed_socket::managed_socket(const struct socket_hint hint,
    * But I shall take another look at it after I'm done testing out some code.
    * Then this shall be fixed.
    */
-  // for (struct addrinfo ainfo : addressinfolist) {
-  //   socket_handle =
-  //     socket(ainfo.ai_family, ainfo.ai_socktype, ainfo.ai_protocol);
+  for (auto& ainfo : addressinfolist) {
+    socket_handle =
+      socket(ainfo.ai_family, ainfo.ai_socktype, ainfo.ai_protocol);
 
-  //   // socket is bad, this addrinfo structure didn't work
-  //   // better try the next one until it works... or all of them fail.
-  //   if (socket_handle == BAD_SOCKET)
-  //     continue;
+    // socket is bad, this addrinfo structure didn't work
+    // better try the next one until it works... or all of them fail.
+    if (socket_handle == BAD_SOCKET)
+      continue;
 
-  //   valid_addr = ainfo;
-  //   break;
-  // }
-  socket_handle = socket(addressinfolist.info->ai_family,
-                         addressinfolist.info->ai_socktype,
-                         addressinfolist.info->ai_protocol);
-  valid_addr = *addressinfolist.info;
+    valid_addr = ainfo;
+    break;
+  }
 
   if (socket_handle == BAD_SOCKET) {
     /* we know the entire list is most likely empty */
@@ -209,6 +210,7 @@ managed_socket::~managed_socket()
   icysock::close_socket(socket_handle);
   empty = true;
   is_listener = false;
+  binds_called = false;
 }
 
 bool
@@ -235,6 +237,8 @@ managed_socket::binds(bool reuse_socket)
     throw icysock::errors::APIError(icysock::errors::errc::bind_failure,
                                     std::string(std::strerror(errno)));
   }
+
+  binds_called = true;
 }
 
 void
@@ -282,6 +286,9 @@ managed_socket::receive(char* buf, icysock::ssize s, int flags)
 void
 managed_socket::listens()
 {
+  /* call binds if it has not been called before */
+  if (!binds_called)
+    binds();
   if (listen(socket_handle, SOMAXCONN) == SOCK_ERR) {
     throw icysock::errors::APIError(icysock::errors::errc::listen_failure,
                                     std::string(std::strerror(errno)));

@@ -2,7 +2,6 @@
 #define ICETEA_SOCKETS_H
 
 #include <iterator>
-#include <netinet/in.h>
 #include <string_view>
 
 #include "generic_sockets.hpp"
@@ -104,11 +103,12 @@ public:
  */
 class managed_socket
 {
-  bool empty;
-  bool is_listener;
-  icysock::gsocket socket_handle;
-  struct addressinfo_handle addressinfolist;
-  struct addrinfo valid_addr;
+  bool binds_called{ false };
+  bool empty{ true };
+  bool is_listener{ false };
+  icysock::gsocket socket_handle{ BAD_SOCKET };
+  addressinfo_handle addressinfolist = {};
+  struct addrinfo valid_addr = {};
 
 public:
   managed_socket();
