@@ -56,6 +56,7 @@ struct socket_hint
 struct addressinfo_handle
 {
 private:
+  struct addrinfo* begin_p;
   struct addrinfo* end_p;
 
 public:
@@ -65,9 +66,8 @@ public:
   addressinfo_handle(const std::string hostname,
                      const std::string service,
                      const struct socket_hint hint);
+  addressinfo_handle(const addressinfo_handle& h);
   ~addressinfo_handle();
-
-  addressinfo_handle& operator=(void* info_v);
 
   struct Iterator
   {
@@ -95,6 +95,8 @@ public:
   Iterator begin();
   Iterator end();
 
+  void next();
+
 }; // struct addressinfo_handle
 
 /* wrap the shitty C api inside the methods and use it
@@ -109,6 +111,8 @@ class managed_socket
   icysock::gsocket socket_handle{ BAD_SOCKET };
   addressinfo_handle addressinfolist = {};
   struct addrinfo valid_addr = {};
+
+  void init_socket_handle(struct addrinfo* a);
 
 public:
   managed_socket();
@@ -138,6 +142,7 @@ public:
   icysock::ssize receive(char* buf, icysock::ssize s, int flags = 0);
   icysock::ssize sends(std::string_view buf, int flags = 0);
   void shutdowns(enum TransmissionEnd reason);
+  void try_next();
 
 }; // class ManagedSocket
 

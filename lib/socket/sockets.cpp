@@ -27,7 +27,8 @@ socket_hint::socket_hint(const ip_version v,
 /* struct adressinfo_handle */
 
 addressinfo_handle::addressinfo_handle()
-  : end_p(nullptr)
+  : begin_p(nullptr)
+  , end_p(nullptr)
   , info(nullptr)
 {
 }
@@ -50,24 +51,25 @@ addressinfo_handle::addressinfo_handle(const string hostname,
       icysock::errors::errc::getaddrinfo_failure, gai_strerror(rv));
   }
 
-  /* want the pointer to the last element of list */
+  /* store the pointer to the first last element of list */
+  begin_p = info;
   auto p = info;
   for (; p->ai_next != nullptr; p = p->ai_next)
     ;
   end_p = p;
 }
 
+addressinfo_handle::addressinfo_handle(const addressinfo_handle& h)
+  : begin_p{ h.begin_p }
+  , end_p{ h.end_p }
+  , info{ h.info }
+{
+}
+
 addressinfo_handle::~addressinfo_handle()
 {
   freeaddrinfo(info);
   info = nullptr;
-}
-
-addressinfo_handle&
-addressinfo_handle::operator=(void* info_v)
-{
-  this->info = (struct addrinfo*)info_v;
-  return *this;
 }
 
 /* addressinfo_handle Iterator implementation */
@@ -124,7 +126,7 @@ operator!=(const addressinfo_handle::Iterator& lhs,
 addressinfo_handle::Iterator
 addressinfo_handle::begin()
 {
-  return Iterator(info);
+  return Iterator(begin_p);
 }
 
 addressinfo_handle::Iterator
@@ -133,7 +135,13 @@ addressinfo_handle::end()
   return Iterator(end_p + 1);
 }
 
-/* struct managed_socket */
+void
+addressinfo_handle::next()
+{
+  info = info->ai_next;
+}
+
+/******** struct managed_socket ************/
 
 managed_socket::managed_socket()
   : binds_called(false)
@@ -164,7 +172,6 @@ managed_socket::managed_socket(managed_socket&& ms)
   , socket_handle(ms.socket_handle)
   , addressinfolist(ms.addressinfolist)
 {
-  ms.addressinfolist = nullptr;
 }
 
 managed_socket::managed_socket(const struct socket_hint hint,
@@ -182,9 +189,7 @@ managed_socket::managed_socket(const struct socket_hint hint,
    * Then this shall be fixed.
    */
   for (auto& ainfo : addressinfolist) {
-    socket_handle =
-      socket(ainfo.ai_family, ainfo.ai_socktype, ainfo.ai_protocol);
-
+    init_socket_handle(&ainfo);
     // socket is bad, this addrinfo structure didn't work
     // better try the next one until it works... or all of them fail.
     if (socket_handle == BAD_SOCKET)
@@ -211,6 +216,12 @@ managed_socket::~managed_socket()
   empty = true;
   is_listener = false;
   binds_called = false;
+}
+
+void
+managed_socket::init_socket_handle(struct addrinfo* addr)
+{
+  socket_handle = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 }
 
 bool
@@ -311,6 +322,29 @@ managed_socket::shutdowns(enum BetterSockets::TransmissionEnd reason)
     throw icysock::errors::APIError(icysock::errors::errc::shutdown_failure,
                                     std::string(std::strerror(errno)));
   }
+}
+
+void
+managed_socket::try_next()
+{
+  icysock::close_socket(socket_handle);
+
+  try {
+    addressinfolist.next();
+  } catch (icysock::errors::APIError& e) {
+    throw e;
+  }
+
+  valid_addr = *addressinfolist.info;
+  init_socket_handle(addressinfolist.info);
+  if (socket_handle == BAD_SOCKET) {
+    throw icysock::errors::APIError(
+      icysock::errors::errc::bad_socket,
+      "initialising socket failed while trying the next 'struct addrinfo'");
+  }
+  binds_called = false;
+  empty = false;
+  is_listener = false;
 }
 
 } // namespace BetterSockets
