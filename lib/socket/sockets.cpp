@@ -293,14 +293,35 @@ managed_socket::listens()
 }
 
 icysock::ssize
-managed_socket::receive(char* buf, icysock::ssize s, int flags)
+managed_socket::receive(void* buf, icysock::size s, int flags)
 {
   icysock::ssize r = recv(socket_handle, buf, (size_t)s, flags);
   if (r == SOCK_ERR) {
-    throw icysock::errors::APIError(icysock::errors::errc::receieve_failure,
+    throw icysock::errors::APIError(icysock::errors::errc::receive_failure,
                                     std::string(std::strerror(errno)));
   }
   return r;
+}
+
+icysock::ssize
+managed_socket::receive_from(void* ibuf,
+                             icysock::size bufsz,
+                             struct sockaddr* sender_addr,
+                             icysock::size* sndrsz,
+                             int flags)
+{
+  icysock::ssize s = recvfrom(socket_handle,
+                              ibuf,
+                              bufsz,
+                              flags,
+                              sender_addr,
+                              reinterpret_cast<unsigned int*>(sndrsz));
+  if (s == SOCK_ERR) {
+    throw icysock::errors::APIError(icysock::errors::errc::receive_from_failure,
+                                    std::string(std::strerror(errno)));
+  }
+
+  return s;
 }
 
 icysock::ssize

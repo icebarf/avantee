@@ -139,7 +139,12 @@ public:
   void
   listens(); // This will call binds() for you. This is because normally
              // the ccept()'ing socket needs to be "bound" to some socket addr.
-  icysock::ssize receive(char* buf, icysock::ssize s, int flags = 0);
+  icysock::ssize receive(void* buf, icysock::size s, int flags = 0);
+  icysock::ssize receive_from(void* ibuf,
+                              icysock::size bufsz,
+                              struct sockaddr* sender_addr,
+                              icysock::size* sndrsz,
+                              int flags = 0);
   icysock::ssize sends(std::string_view buf, int flags = 0);
   void shutdowns(enum TransmissionEnd reason);
   void try_next();
