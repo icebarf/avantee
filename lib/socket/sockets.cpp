@@ -224,8 +224,6 @@ managed_socket::managed_socket(const struct socket_hint hint,
 
 managed_socket::~managed_socket()
 {
-  // if(is_listener) unlink(*name)
-  this->shutdowns(BetterSockets::TransmissionEnd::EVERYTHING);
   icysock::close_socket(socket_handle);
   empty = true;
   is_listener = false;
