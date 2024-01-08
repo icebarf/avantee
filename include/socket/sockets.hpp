@@ -151,6 +151,28 @@ public:
 
 }; // class ManagedSocket
 
+/* Abstraction for fd_set */
+
+enum class fd_type
+{
+  READ,
+  WRITE,
+  EXCEPT,
+};
+
+template<fd_type f>
+struct fd_set_wrapper
+{
+  fd_set set;
+  fd_type type;
+  fd_set_wrapper();
+  void append(icysock::gsocket s);
+  void append(managed_socket& s);
+  void empty_out();
+  int isset(icysock::gsocket s);
+  int isset(managed_socket& s);
+};
+
 } // namespace BetterSockets
 
 #endif // ICETEA_SOCKETS_H
