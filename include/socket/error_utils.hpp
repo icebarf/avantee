@@ -54,6 +54,7 @@ public:
   SocketInitError& operator=(const SocketInitError& other) noexcept;
 
   const char* what() const noexcept override;
+  errc whatErrc() const noexcept;
 };
 
 class APIError : public std::exception
@@ -73,6 +74,7 @@ public:
   APIError& operator=(const APIError& other) noexcept;
 
   const char* what() const noexcept override;
+  errc whatErrc() const noexcept;
 };
 
 }

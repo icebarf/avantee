@@ -127,6 +127,12 @@ SocketInitError::what() const noexcept
   return what_string.c_str();
 }
 
+errc
+SocketInitError::whatErrc() const noexcept
+{
+  return static_cast<errc>(ecode.value());
+}
+
 /* APIError */
 APIError::APIError(const std::string& what_arg)
   : ecode()
@@ -176,6 +182,12 @@ const char*
 APIError::what() const noexcept
 {
   return what_string.c_str();
+}
+
+errc
+APIError::whatErrc() const noexcept
+{
+  return static_cast<errc>(ecode.value());
 }
 
 } // namespace icysock_errors
