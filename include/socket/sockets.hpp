@@ -95,6 +95,12 @@ public:
   Iterator begin();
   Iterator end();
 
+  /* only make sure that the list begin, end pointers are the same*/
+  friend bool operator==(const addressinfo_handle& lhs,
+                         const addressinfo_handle& rhs);
+  friend bool operator!=(const addressinfo_handle& lhs,
+                         const addressinfo_handle& rhs);
+
   void next();
 
 }; // struct addressinfo_handle
@@ -124,6 +130,12 @@ public:
 
   ~managed_socket();
   bool is_empty();
+  friend bool operator==(const int& lhs, const managed_socket& rhs);
+  friend bool operator!=(const int& lhs, const managed_socket& rhs);
+  friend bool operator==(const managed_socket& lhs, const int& rhs);
+  friend bool operator!=(const managed_socket& lhs, const int& rhs);
+  friend bool operator==(const managed_socket& lhs, const managed_socket& rhs);
+  friend bool operator!=(const managed_socket& lhs, const managed_socket& rhs);
 
   // `man 2 accept` takes 3 arguments, two of
   // which will contain relevant information
@@ -136,9 +148,9 @@ public:
   [[nodiscard("Accepted socket must be used.")]] icysock::gsocket accepts();
   void binds(bool reuse_socket = true);
   void connects();
-  void
-  listens(); // This will call binds() for you. This is because normally
-             // the ccept()'ing socket needs to be "bound" to some socket addr.
+  void listens(); // This will call binds() for you. This is because normally
+                  // the ccept()'ing socket needs to be "bound" to some socket
+                  // addr.
   icysock::ssize receive(void* buf, icysock::size s, int flags = 0);
   icysock::ssize receive_from(void* ibuf,
                               icysock::size bufsz,

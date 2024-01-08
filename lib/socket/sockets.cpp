@@ -135,6 +135,18 @@ addressinfo_handle::end()
   return Iterator(end_p + 1);
 }
 
+bool
+operator==(const addressinfo_handle& lhs, const addressinfo_handle& rhs)
+{
+  return lhs.begin_p == rhs.begin_p && lhs.end_p == rhs.end_p;
+}
+
+bool
+operator!=(const addressinfo_handle& lhs, const addressinfo_handle& rhs)
+{
+  return !(lhs == rhs);
+}
+
 void
 addressinfo_handle::next()
 {
@@ -230,6 +242,43 @@ bool
 managed_socket::is_empty()
 {
   return empty;
+}
+
+bool
+operator==(const int& lhs, const managed_socket& rhs)
+{
+  return lhs == rhs.socket_handle;
+}
+
+bool
+operator!=(const int& lhs, const managed_socket& rhs)
+{
+  return !(lhs == rhs);
+}
+
+bool
+operator==(const managed_socket& lhs, const int& rhs)
+{
+  return lhs.socket_handle == rhs;
+}
+
+bool
+operator!=(const managed_socket& lhs, const int& rhs)
+{
+  return !(lhs == rhs);
+}
+
+bool
+operator==(const managed_socket& lhs, const managed_socket& rhs)
+{
+  return lhs.empty == rhs.empty && lhs.addressinfolist == rhs.addressinfolist &&
+         lhs.socket_handle == rhs.socket_handle;
+}
+
+bool
+operator!=(const managed_socket& lhs, const managed_socket& rhs)
+{
+  return !(lhs == rhs); // use the previously defined equality
 }
 
 /* implement arg2 and arg3 at a later date, more info in header file. */
