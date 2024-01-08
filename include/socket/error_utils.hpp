@@ -25,7 +25,8 @@ enum class errc
   connect_failure,
   send_failure,
   shutdown_failure,
-  receieve_failure,
+  receive_failure,
+  receive_from_failure,
   listen_failure,
   accept_failure,
 };

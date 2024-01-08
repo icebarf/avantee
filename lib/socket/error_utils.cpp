@@ -47,8 +47,11 @@ make_error_code(errc e) noexcept
         case errc::shutdown_failure:
           return std::string("shutdown() failed");
 
-        case errc::receieve_failure:
-          return std::string("shutdown() failed");
+        case errc::receive_failure:
+          return std::string("recv() failed");
+
+        case errc::receive_from_failure:
+          return std::string("recvfrom() failed");
 
         case errc::listen_failure:
           return std::string("listen() failed");
