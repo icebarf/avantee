@@ -219,6 +219,23 @@ managed_socket::is_empty()
   return empty;
 }
 
+/* implement arg2 and arg3 at a later date, more info in header file. */
+icysock::gsocket managed_socket::accepts(/*, arg2, arg3 */)
+{
+  /* Only call accept() on the socket if listen() has been called before.
+   * Otherwise do nothing and return an invalid socket. */
+  if (is_listener) {
+    icysock::gsocket accepted = accept(socket_handle, nullptr, nullptr);
+    if (accepted == SOCK_ERR) {
+      throw icysock::errors::APIError(icysock::errors::errc::accept_failure,
+                                      std::string(std::strerror(errno)));
+    }
+    return accepted;
+  }
+
+  return SOCK_ERR;
+}
+
 void
 managed_socket::binds(bool reuse_socket)
 {
@@ -251,6 +268,30 @@ managed_socket::connects()
   }
 }
 
+void
+managed_socket::listens()
+{
+  /* call binds if it has not been called before */
+  if (!binds_called)
+    binds();
+  if (listen(socket_handle, SOMAXCONN) == SOCK_ERR) {
+    throw icysock::errors::APIError(icysock::errors::errc::listen_failure,
+                                    std::string(std::strerror(errno)));
+  }
+  is_listener = true;
+}
+
+icysock::ssize
+managed_socket::receive(char* buf, icysock::ssize s, int flags)
+{
+  icysock::ssize r = recv(socket_handle, buf, (size_t)s, flags);
+  if (r == SOCK_ERR) {
+    throw icysock::errors::APIError(icysock::errors::errc::receieve_failure,
+                                    std::string(std::strerror(errno)));
+  }
+  return r;
+}
+
 icysock::ssize
 managed_socket::sends(std::string_view buf, int flags)
 {
@@ -270,47 +311,6 @@ managed_socket::shutdowns(enum BetterSockets::TransmissionEnd reason)
     throw icysock::errors::APIError(icysock::errors::errc::shutdown_failure,
                                     std::string(std::strerror(errno)));
   }
-}
-
-icysock::ssize
-managed_socket::receive(char* buf, icysock::ssize s, int flags)
-{
-  icysock::ssize r = recv(socket_handle, buf, (size_t)s, flags);
-  if (r == SOCK_ERR) {
-    throw icysock::errors::APIError(icysock::errors::errc::receieve_failure,
-                                    std::string(std::strerror(errno)));
-  }
-  return r;
-}
-
-void
-managed_socket::listens()
-{
-  /* call binds if it has not been called before */
-  if (!binds_called)
-    binds();
-  if (listen(socket_handle, SOMAXCONN) == SOCK_ERR) {
-    throw icysock::errors::APIError(icysock::errors::errc::listen_failure,
-                                    std::string(std::strerror(errno)));
-  }
-  is_listener = true;
-}
-
-/* implement arg2 and arg3 at a later date, more info in header file. */
-icysock::gsocket managed_socket::accepts(/*, arg2, arg3 */)
-{
-  /* Only call accept() on the socket if listen() has been called before.
-   * Otherwise do nothing and return an invalid socket. */
-  if (is_listener) {
-    icysock::gsocket accepted = accept(socket_handle, nullptr, nullptr);
-    if (accepted == SOCK_ERR) {
-      throw icysock::errors::APIError(icysock::errors::errc::accept_failure,
-                                      std::string(std::strerror(errno)));
-    }
-    return accepted;
-  }
-
-  return SOCK_ERR;
 }
 
 } // namespace BetterSockets
