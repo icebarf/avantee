@@ -416,54 +416,7 @@ managed_socket::try_next()
   empty = false;
   is_listener = false;
 }
-
 // finish managed_socket
-
-/* Implementation of fd_set wrapper */
-
-template<BetterSockets::fd_type f>
-BetterSockets::fd_set_wrapper<f>::fd_set_wrapper()
-  : set{}
-  , type{ f }
-{
-}
-
-template<BetterSockets::fd_type f>
-void
-BetterSockets::fd_set_wrapper<f>::append(icysock::gsocket s)
-{
-  FD_SET(s, &set);
-}
-
-template<BetterSockets::fd_type f>
-void
-BetterSockets::fd_set_wrapper<f>::append(managed_socket& s)
-{
-  FD_SET(s.socket_handle, &set);
-}
-
-template<BetterSockets::fd_type f>
-void
-BetterSockets::fd_set_wrapper<f>::empty_out()
-{
-  FD_ZERO(&set);
-}
-
-template<BetterSockets::fd_type f>
-int
-BetterSockets::fd_set_wrapper<f>::isset(icysock::gsocket s)
-{
-  return FD_ISSET(s, &set);
-}
-
-template<BetterSockets::fd_type f>
-int
-BetterSockets::fd_set_wrapper<f>::isset(BetterSockets::managed_socket& s)
-{
-  return FD_ISSET(s.socket_handle, &set);
-}
-
-// finish fd_set_wrapper
 
 /* implementation of struct multiplexer*/
 BetterSockets::multiplexer::multiplexer()

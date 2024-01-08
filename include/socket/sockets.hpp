@@ -195,6 +195,50 @@ struct multiplexer
   int operator++(int); // postfix
 };
 
+/* Implementation of fd_set wrapper */
+
+template<BetterSockets::fd_type f>
+inline BetterSockets::fd_set_wrapper<f>::fd_set_wrapper()
+  : set{}
+  , type{ f }
+{
+}
+
+template<BetterSockets::fd_type f>
+void inline BetterSockets::fd_set_wrapper<f>::append(icysock::gsocket s)
+{
+  FD_SET(s, &set);
+}
+
+template<BetterSockets::fd_type f>
+void inline BetterSockets::fd_set_wrapper<f>::append(managed_socket& s)
+{
+  FD_SET(s.socket_handle, &set);
+}
+
+template<BetterSockets::fd_type f>
+inline void
+BetterSockets::fd_set_wrapper<f>::empty_out()
+{
+  FD_ZERO(&set);
+}
+
+template<BetterSockets::fd_type f>
+inline int
+BetterSockets::fd_set_wrapper<f>::isset(icysock::gsocket s)
+{
+  return FD_ISSET(s, &set);
+}
+
+template<BetterSockets::fd_type f>
+inline int
+BetterSockets::fd_set_wrapper<f>::isset(BetterSockets::managed_socket& s)
+{
+  return FD_ISSET(s.socket_handle, &set);
+}
+
+// finish fd_set_wrapper
+
 } // namespace BetterSockets
 
 #endif // ICETEA_SOCKETS_H
