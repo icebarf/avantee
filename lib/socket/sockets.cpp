@@ -418,4 +418,31 @@ BetterSockets::fd_set_wrapper<f>::isset(BetterSockets::managed_socket& s)
 
 // finish fd_set_wrapper
 
+/* implementation of struct multiplexer*/
+BetterSockets::multiplexer::multiplexer()
+  : timeout{ 0, 0 }
+  , watching_over{ 0 }
+{
+}
+
+BetterSockets::multiplexer::multiplexer(long sec, long usec, int watch_over)
+  : timeout(sec, usec)
+  , watching_over(watch_over)
+{
+}
+
+int&
+BetterSockets::multiplexer::operator++()
+{
+  return ++watching_over;
+}
+
+int
+BetterSockets::multiplexer::operator++(int)
+{
+  int old = watching_over;
+  ++(*this); // prefix increment
+  return old;
+}
+
 } // namespace BetterSockets

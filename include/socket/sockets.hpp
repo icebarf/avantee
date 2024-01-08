@@ -173,6 +173,16 @@ struct fd_set_wrapper
   int isset(managed_socket& s);
 };
 
+struct multiplexer
+{
+  struct timeval timeout;
+  int watching_over;
+  multiplexer();
+  multiplexer(long sec, long usec, int watch_over);
+  int& operator++();   // prefix
+  int operator++(int); // postfix
+};
+
 } // namespace BetterSockets
 
 #endif // ICETEA_SOCKETS_H
