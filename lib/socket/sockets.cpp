@@ -147,8 +147,8 @@ managed_socket::managed_socket()
   : binds_called(false)
   , empty(false)
   , is_listener(false)
-  , socket_handle(BAD_SOCKET)
   , addressinfolist()
+  , socket_handle(BAD_SOCKET)
 {
 }
 
@@ -156,8 +156,8 @@ managed_socket::managed_socket(icysock::gsocket s)
   : binds_called(false)
   , empty(false)
   , is_listener(false)
-  , socket_handle(s)
   , addressinfolist()
+  , socket_handle(s)
 {
   if (s == SOCK_ERR)
     throw icysock::errors::SocketInitError(
@@ -169,8 +169,8 @@ managed_socket::managed_socket(managed_socket&& ms)
   : binds_called(ms.binds_called)
   , empty(ms.empty)
   , is_listener(ms.is_listener)
-  , socket_handle(ms.socket_handle)
   , addressinfolist(ms.addressinfolist)
+  , socket_handle(ms.socket_handle)
 {
 }
 
@@ -180,8 +180,8 @@ managed_socket::managed_socket(const struct socket_hint hint,
   : binds_called(false)
   , empty(false)
   , is_listener(false)
-  , socket_handle{ BAD_SOCKET }
   , addressinfolist(hostname, service, hint)
+  , socket_handle{ BAD_SOCKET }
 {
   /* This commented out snippet of code needs to be fixed.
    * I think that the iterators for addresinfo_handle structure aare broken.

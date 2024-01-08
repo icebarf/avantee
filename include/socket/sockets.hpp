@@ -108,13 +108,13 @@ class managed_socket
   bool binds_called{ false };
   bool empty{ true };
   bool is_listener{ false };
-  icysock::gsocket socket_handle{ BAD_SOCKET };
   addressinfo_handle addressinfolist = {};
   struct addrinfo valid_addr = {};
 
   void init_socket_handle(struct addrinfo* a);
 
 public:
+  icysock::gsocket socket_handle{ BAD_SOCKET };
   managed_socket();
   managed_socket(icysock::gsocket s);
   managed_socket(managed_socket&& ms);
