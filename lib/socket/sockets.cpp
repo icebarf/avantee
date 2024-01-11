@@ -150,6 +150,10 @@ operator!=(const addressinfo_handle& lhs, const addressinfo_handle& rhs)
 void
 addressinfo_handle::next()
 {
+  if (info->ai_next == nullptr)
+    throw icysock::errors::APIError(icysock::errors::errc::bad_addrinfolist,
+                                    "Reached the end of list.");
+
   info = info->ai_next;
 }
 
@@ -401,8 +405,8 @@ managed_socket::try_next()
 
   try {
     addressinfolist.next();
-  } catch (icysock::errors::APIError& e) {
-    throw e;
+  } catch (const icysock::errors::APIError& e) {
+    throw;
   }
 
   valid_addr = *addressinfolist.info;
