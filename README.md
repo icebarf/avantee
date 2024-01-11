@@ -1,17 +1,11 @@
 # Project Avantee
 
-Avantee is a codename for my implementation of a TFTP client-server suite.
-
-## Reason of existence
-
-This is an exercise to work with C++'s abstraction capabilites, while also
-learning about socket programming. I chose RFC 1350 because it is very
+Avantee is an implementation of a TFTP client-server suite.
+This is an exercise to work with C++, whlie also
+learning about socket programming. Choosing RFC 1350 was _trivial_ because it is very
 "trivial" to understand and implement.
 
 ## Details
-
-The way this project was designed is listed as follows, with ascending order
-of abstraction introduced. Everything is wrapped in a namespace.
 
 ### `<socket/generic_sockets.hpp>`
 
@@ -27,23 +21,22 @@ Berkely Sockets. Provides
 Build upon that generalisation and introduce readable and meaningful names.
 - Macros as `constexpr` variables
 - Enumerations wrapped in `enum class` for type safety
-- Wrapper classes that **_partially_** abstracts away the laborous C API.
+- Wrapper classes that **_partially_** abstract away the laborous C API.
 
 ### `<socket/error_utils.hpp>`
 
 Provides meaningful errors and implements an exception type for error handling.
 
-## My Thoughts
+## Direction
 
-The project has many refactoring capabilities, such as using templates, better
-error handling with alternative methods, improving the overall meaningfulness
-of the wrapper classes, and covering more of the Berkely Sockets API.
+The code needs to be refactored, use TMP to do things at compile-time, better
+error handling, improving the meaningfulness of the wrappers, and obviously
+covering more of the Berkely Sockets API.
 Currently, the goal is to get things working and only cover part of the API
 that will be useful in implementing a TFTP client-server.
 
-As of writing this document, I have mostly worked on minimal abstraction
-capabilities, and some testing with an example program. As more work is done,
-this section will be updated.
+As of writing this document, I have mostly worked on minimal abstractions,
+and some testing with an example program.
 
 ## Resources Used
 
@@ -51,3 +44,4 @@ this section will be updated.
 - [Beej's Guide to Network Programming](https://beej.us/guide/bgnet/html/index-wide.html)
 - [RFC 1350](https://web.archive.org/web/20240104152720/https://datatracker.ietf.org/doc/html/rfc1350)
 - [cppreference](https://en.cppreference.org/w/c++)
+- [manual pages](https://linux.die.net/man/)
