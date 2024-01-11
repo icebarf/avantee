@@ -32,3 +32,16 @@ endif()
 target_include_directories(client PRIVATE include/)
 target_compile_options(client PUBLIC -Wall -Wextra -Werror -Wpedantic
                                       -Wshadow -Wconversion -g -Og)
+add_executable(avantee-server)
+target_sources(avantee-server PUBLIC lib/socket/error_utils.cpp
+                      PUBLIC lib/socket/generic_sockets.cpp
+                      PUBLIC lib/socket/sockets.cpp
+                      PUBLIC src/avantee-server.cpp
+              )
+target_include_directories(avantee-server PRIVATE include/)
+if(${CMAKE_HOST_WIN32})
+  target_link_libraries(avantee-server ws2_32 )
+endif()
+target_compile_options(avantee-server PUBLIC -Wall -Wextra -Werror -Wpedantic
+                                      -Wshadow -Wconversion -g -Og)
+
