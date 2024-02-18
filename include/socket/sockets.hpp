@@ -275,6 +275,7 @@ fdset_wrapper<f>::operator=(fdset_wrapper<f>& rhs)
 {
   this->set = rhs.set;
   this->type = rhs.type;
+  return *this;
 }
 
 // finish fdset_wrapper
