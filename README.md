@@ -32,11 +32,8 @@ Provides meaningful errors and implements an exception type for error handling.
 The code needs to be refactored, use TMP to do things at compile-time, better
 error handling, improving the meaningfulness of the wrappers, and obviously
 covering more of the Berkely Sockets API.
-Currently, the goal is to get things working and only cover part of the API
+Currently, the goal is to get things working and only covering parts of the API
 that will be useful in implementing a TFTP client-server.
-
-As of writing this document, I have mostly worked on minimal abstractions,
-and some testing with an example program.
 
 ## Resources Used
 
