@@ -3,6 +3,7 @@
 
 #include <iterator>
 #include <string_view>
+#include <sys/select.h>
 
 #include "generic_sockets.hpp"
 
@@ -173,16 +174,23 @@ enum class fd_type
 };
 
 template<fd_type f>
-struct fd_set_wrapper
+struct fdset_wrapper
 {
   fd_set set;
   fd_type type;
-  fd_set_wrapper();
+
+  fdset_wrapper();
+  fdset_wrapper(fd_set s);
+  fdset_wrapper(fdset_wrapper& s);
+  fdset_wrapper(fdset_wrapper&& s);
   void append(icysock::gsocket s);
+
   void append(managed_socket& s);
   void empty_out();
   int isset(icysock::gsocket s);
   int isset(managed_socket& s);
+
+  fdset_wrapper& operator=(fdset_wrapper& rhs);
 };
 
 struct multiplexer
@@ -198,46 +206,78 @@ struct multiplexer
 /* Implementation of fd_set wrapper */
 
 template<BetterSockets::fd_type f>
-inline BetterSockets::fd_set_wrapper<f>::fd_set_wrapper()
+inline BetterSockets::fdset_wrapper<f>::fdset_wrapper()
   : set{}
+  , type{ f }
+{
+  FD_ZERO(&set);
+}
+
+template<BetterSockets::fd_type f>
+inline BetterSockets::fdset_wrapper<f>::fdset_wrapper(fd_set s)
+  : set{ s }
   , type{ f }
 {
 }
 
 template<BetterSockets::fd_type f>
-void inline BetterSockets::fd_set_wrapper<f>::append(icysock::gsocket s)
+inline BetterSockets::fdset_wrapper<f>::fdset_wrapper(fdset_wrapper<f>& s)
+  : set{ s.set }
+  , type{ s.type }
+{
+}
+
+template<BetterSockets::fd_type f>
+inline BetterSockets::fdset_wrapper<f>::fdset_wrapper(fdset_wrapper<f>&& s)
+  : set{ s.set }
+  , type{ s.type }
+{
+  s.set = nullptr;
+  s.type = fd_type::EXCEPT;
+}
+
+template<BetterSockets::fd_type f>
+void inline BetterSockets::fdset_wrapper<f>::append(icysock::gsocket s)
 {
   FD_SET(s, &set);
 }
 
 template<BetterSockets::fd_type f>
-void inline BetterSockets::fd_set_wrapper<f>::append(managed_socket& s)
+void inline BetterSockets::fdset_wrapper<f>::append(managed_socket& s)
 {
   FD_SET(s.socket_handle, &set);
 }
 
 template<BetterSockets::fd_type f>
 inline void
-BetterSockets::fd_set_wrapper<f>::empty_out()
+BetterSockets::fdset_wrapper<f>::empty_out()
 {
   FD_ZERO(&set);
 }
 
 template<BetterSockets::fd_type f>
 inline int
-BetterSockets::fd_set_wrapper<f>::isset(icysock::gsocket s)
+BetterSockets::fdset_wrapper<f>::isset(icysock::gsocket s)
 {
   return FD_ISSET(s, &set);
 }
 
 template<BetterSockets::fd_type f>
 inline int
-BetterSockets::fd_set_wrapper<f>::isset(BetterSockets::managed_socket& s)
+BetterSockets::fdset_wrapper<f>::isset(BetterSockets::managed_socket& s)
 {
   return FD_ISSET(s.socket_handle, &set);
 }
 
-// finish fd_set_wrapper
+template<fd_type f>
+inline fdset_wrapper<f>&
+fdset_wrapper<f>::operator=(fdset_wrapper<f>& rhs)
+{
+  this->set = rhs.set;
+  this->type = rhs.type;
+}
+
+// finish fdset_wrapper
 
 } // namespace BetterSockets
 

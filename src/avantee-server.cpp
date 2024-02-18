@@ -31,20 +31,19 @@ watch(BetterSockets::managed_socket& tftp_listener)
 {
 
   /* prepare for multiplexing */
-  fd_set_wrapper<fd_type::READ> master_readset;
+  fdset_wrapper<fd_type::READ> master_readset{};
   master_readset.append(tftp_listener);
   multiplexer params(5, 0, tftp_listener.socket_handle);
 
   /* for receive_from to store information about client */
   struct sockaddr_storage client_info;
   std::array<std::byte, MAX_PACKET_BYTES> packet;
-  fd_set readset;
-  FD_ZERO(&readset);
+  fdset_wrapper<fd_type::READ> readset{};
 
   while (true) {
-    readset = master_readset.set;
+    readset = master_readset;
     if (select(params.watching_over + 1,
-               &readset,
+               &readset.set,
                nullptr,
                nullptr,
                &params.timeout) == SOCK_ERR) {
@@ -53,7 +52,7 @@ watch(BetterSockets::managed_socket& tftp_listener)
     }
 
     for (int i = 0; i <= params.watching_over; i++) {
-      if (FD_ISSET(i, &readset)) {
+      if (readset.isset(i)) {
         // new connection
         if (i == tftp_listener) {
           icysock::size client_sz = sizeof client_info;
@@ -65,7 +64,7 @@ watch(BetterSockets::managed_socket& tftp_listener)
 
           // process receieved packet
         } // if i == tftp_listener
-      }   // if FD_ISSET(i, &readset)
+      }   // if readset.isset(i)
 
       fprintf(stdout, "no connection\n");
     } // for (i = 0; i <= watching over; i++)
