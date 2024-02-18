@@ -1,25 +1,8 @@
-/*
- * Copyright 2023, Amritpal Singh
- * This file is part of icetea+.
- *
- * icetea+ is free software: you can redistribute it and/or modify it under the
- * terms of the GNU General Public License as published by the Free Software
- * Foundation, either version 3 of the License, or (at your option) any later
- * version.
- *
- * icetea+ is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along with
- * icetea+. If not, see <https://www.gnu.org/licenses/>.
- */
-
 #ifndef SOCKET_ABSTACTION_H
 #define SOCKET_ABSTACTION_H
 
 /* The goal of this thin wrapper is to not bother with lower level C
- * api. Things know to be different on platform such as windows -
+ * api. Things known to be different on platform such as windows -
  * types, functions are aliased or wrapped upon, and other values may be
  * specified as preprocessor macros
  */
