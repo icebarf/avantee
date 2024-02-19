@@ -41,7 +41,8 @@ addressinfo_handle::addressinfo_handle(const string hostname,
   icysock::zero(&hints, sizeof(hints));
   hints.ai_family = static_cast<int>(hint.hostip_version);
   hints.ai_socktype = static_cast<int>(hint.socket_kind);
-  hints.ai_flags = static_cast<int>(hint.flags);
+  if (hint.flags != sock_flags::NONE)
+    hints.ai_flags = static_cast<int>(hint.flags);
   hints.ai_protocol = static_cast<int>(hint.ipproto);
 
   int rv = getaddrinfo(

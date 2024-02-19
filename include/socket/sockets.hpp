@@ -32,6 +32,7 @@ enum class sock_kind
 
 enum class sock_flags
 {
+  NONE = -1,
   USE_HOST_IP = AI_PASSIVE,
 };
 
@@ -116,11 +117,11 @@ class managed_socket
   bool empty{ true };
   bool is_listener{ false };
   addressinfo_handle addressinfolist = {};
-  struct addrinfo valid_addr = {};
 
   void init_socket_handle(struct addrinfo* a);
 
 public:
+  struct addrinfo valid_addr = {};
   icysock::gsocket socket_handle{ BAD_SOCKET };
   managed_socket();
   managed_socket(icysock::gsocket s);
@@ -234,6 +235,7 @@ inline BetterSockets::fdset_wrapper<f>::fdset_wrapper(fdset_wrapper<f>&& s)
 {
   s.set = nullptr;
   s.type = fd_type::EXCEPT;
+  this->empty_out();
 }
 
 template<BetterSockets::fd_type f>
