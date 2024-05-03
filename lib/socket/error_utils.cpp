@@ -2,9 +2,9 @@
 #include <cstring>
 #include <string>
 
-#include "socket/error_utils.hpp"
+#include "socket/error_codes.hpp"
 
-namespace icysock::errors {
+namespace sock_errors {
 
 std::error_code
 make_error_code(errc e) noexcept

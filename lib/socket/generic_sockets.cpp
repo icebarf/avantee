@@ -1,6 +1,5 @@
 #include <cstdio>
 #include <cstring>
-#include <exception>
 
 #include "socket/generic_sockets.hpp"
 

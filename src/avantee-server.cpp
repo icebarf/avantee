@@ -6,7 +6,6 @@
 #include "socket/sockets.hpp"
 
 using namespace BetterSockets;
-using namespace icysock::errors;
 using BetterSockets::fd_type;
 
 constexpr std::string_view TFTP_PORT{ "69" };
@@ -15,10 +14,9 @@ constexpr int MAX_PACKET_BYTES{ 516 };
 void
 checked_try_next(BetterSockets::managed_socket& s)
 {
-  // we do this because we want proper message propagation to the user.
   try {
     s.try_next();
-  } catch (const APIError& ex) {
+  } catch (const sock_errors::APIError& ex) {
     fprintf(stderr,
             "Failure while moving to next address info node: %s\n",
             ex.what());
@@ -64,7 +62,7 @@ watch(BetterSockets::managed_socket& tftp_listener)
 
           // process receieved packet
         } // if i == tftp_listener
-      }   // if readset.isset(i)
+      } // if readset.isset(i)
 
       fprintf(stdout, "no connection\n");
     } // for (i = 0; i <= watching over; i++)
@@ -85,7 +83,7 @@ main()
   for (;;) {
     try {
       tftp_listener.binds();
-    } catch (const APIError& e) {
+    } catch (const sock_errors::APIError& e) {
       fprintf(stderr, "Could not bind to host on port 69: %s\n", e.what());
       fprintf(stdout,
               "Trying to bind with the next available address info node.\n");

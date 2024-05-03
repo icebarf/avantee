@@ -47,8 +47,8 @@ addressinfo_handle::addressinfo_handle(const string hostname,
   int rv = getaddrinfo(
     hostname.empty() ? NULL : hostname.data(), service.data(), &hints, &info);
   if (rv != 0) {
-    throw icysock::errors::SocketInitError(
-      icysock::errors::errc::getaddrinfo_failure, gai_strerror(rv));
+    throw sock_errors::SocketInitError(
+      icysock::errors::getaddrinfo_failure, gai_strerror(rv));
   }
 
   /* store the pointer to the first last element of list */
@@ -151,7 +151,7 @@ void
 addressinfo_handle::next()
 {
   if (info->ai_next == nullptr)
-    throw icysock::errors::APIError(icysock::errors::errc::bad_addrinfolist,
+    throw sock_errors::APIError(sock_errors::errc::bad_addrinfolist,
                                     "Reached the end of list.");
 
   info = info->ai_next;
@@ -178,8 +178,8 @@ managed_socket::managed_socket(icysock::gsocket s)
   , socket_handle(s)
 {
   if (s == SOCK_ERR)
-    throw icysock::errors::SocketInitError(
-      icysock::errors::errc::bad_socket,
+    throw sock_errors::SocketInitError(
+      sock_errors::errc::bad_socket,
       std::string("Creation of managed_socket failed. Invalid argument."));
 }
 
@@ -219,8 +219,8 @@ managed_socket::managed_socket(const struct socket_hint hint,
 
   if (socket_handle == BAD_SOCKET) {
     /* we know the entire list is most likely empty */
-    throw icysock::errors::SocketInitError(
-      icysock::errors::errc::bad_addrinfolist,
+    throw sock_errors::SocketInitError(
+      sock_errors::errc::bad_addrinfolist,
       std::string("socket() failed due to") +
         std::string(std::strerror(errno)));
   }
@@ -291,7 +291,7 @@ icysock::gsocket managed_socket::accepts(/*, arg2, arg3 */)
   if (is_listener) {
     icysock::gsocket accepted = accept(socket_handle, nullptr, nullptr);
     if (accepted == SOCK_ERR) {
-      throw icysock::errors::APIError(icysock::errors::errc::accept_failure,
+      throw sock_errors::APIError(sock_errors::errc::accept_failure,
                                       std::string(std::strerror(errno)));
     }
     return accepted;
@@ -308,14 +308,14 @@ managed_socket::binds(bool reuse_socket)
     if (setsockopt(
           socket_handle, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) ==
         SOCK_ERR) {
-      throw icysock::errors::APIError(icysock::errors::errc::setsockopt_failure,
+      throw sock_errors::APIError(sock_errors::errc::setsockopt_failure,
                                       std::string(std::strerror(errno)));
     }
   }
 
   if (bind(socket_handle, valid_addr.ai_addr, valid_addr.ai_addrlen) ==
       SOCK_ERR) {
-    throw icysock::errors::APIError(icysock::errors::errc::bind_failure,
+    throw sock_errors::APIError(sock_errors::errc::bind_failure,
                                     std::string(std::strerror(errno)));
   }
 
@@ -327,7 +327,7 @@ managed_socket::connects()
 {
   if (connect(socket_handle, valid_addr.ai_addr, valid_addr.ai_addrlen) ==
       SOCK_ERR) {
-    throw icysock::errors::APIError(icysock::errors::errc::connect_failure,
+    throw sock_errors::APIError(sock_errors::errc::connect_failure,
                                     std::string(std::strerror(errno)));
   }
 }
@@ -339,7 +339,7 @@ managed_socket::listens()
   if (!binds_called)
     binds();
   if (listen(socket_handle, SOMAXCONN) == SOCK_ERR) {
-    throw icysock::errors::APIError(icysock::errors::errc::listen_failure,
+    throw sock_errors::APIError(sock_errors::errc::listen_failure,
                                     std::string(std::strerror(errno)));
   }
   is_listener = true;
@@ -350,7 +350,7 @@ managed_socket::receive(void* buf, icysock::size s, int flags)
 {
   icysock::ssize r = recv(socket_handle, buf, (size_t)s, flags);
   if (r == SOCK_ERR) {
-    throw icysock::errors::APIError(icysock::errors::errc::receive_failure,
+    throw sock_errors::APIError(sock_errors::errc::receive_failure,
                                     std::string(std::strerror(errno)));
   }
   return r;
@@ -370,7 +370,7 @@ managed_socket::receive_from(void* ibuf,
                               sender_addr,
                               reinterpret_cast<unsigned int*>(sndrsz));
   if (s == SOCK_ERR) {
-    throw icysock::errors::APIError(icysock::errors::errc::receive_from_failure,
+    throw sock_errors::APIError(sock_errors::errc::receive_from_failure,
                                     std::string(std::strerror(errno)));
   }
 
@@ -382,7 +382,7 @@ managed_socket::sends(std::string_view buf, int flags)
 {
   icysock::ssize r = send(socket_handle, buf.data(), buf.length(), flags);
   if (r == SOCK_ERR) {
-    throw icysock::errors::APIError(icysock::errors::errc::send_failure,
+    throw sock_errors::APIError(sock_errors::errc::send_failure,
                                     std::string(std::strerror(errno)));
   }
 
@@ -393,7 +393,7 @@ void
 managed_socket::shutdowns(enum BetterSockets::TransmissionEnd reason)
 {
   if (shutdown(socket_handle, static_cast<int>(reason)) == SOCK_ERR) {
-    throw icysock::errors::APIError(icysock::errors::errc::shutdown_failure,
+    throw sock_errors::APIError(sock_errors::errc::shutdown_failure,
                                     std::string(std::strerror(errno)));
   }
 }
@@ -405,15 +405,15 @@ managed_socket::try_next()
 
   try {
     addressinfolist.next();
-  } catch (const icysock::errors::APIError& e) {
+  } catch (const sock_errors::APIError& e) {
     throw;
   }
 
   valid_addr = *addressinfolist.info;
   init_socket_handle(addressinfolist.info);
   if (socket_handle == BAD_SOCKET) {
-    throw icysock::errors::APIError(
-      icysock::errors::errc::bad_socket,
+    throw sock_errors::APIError(
+      sock_errors::errc::bad_socket,
       "initialising socket failed while trying the next 'struct addrinfo'");
   }
   binds_called = false;
