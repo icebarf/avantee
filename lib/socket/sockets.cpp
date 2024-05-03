@@ -1,6 +1,5 @@
 #include <cerrno>
 #include <cstring>
-#include <sys/socket.h>
 
 #include "socket/error_utils.hpp"
 #include "socket/generic_sockets.hpp"

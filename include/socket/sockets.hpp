@@ -3,7 +3,6 @@
 
 #include <iterator>
 #include <string_view>
-#include <sys/select.h>
 
 #include "generic_sockets.hpp"
 
@@ -42,6 +41,9 @@ enum class ip_protocol
   TCP = IPPROTO_TCP,
 };
 
+/* structure to be used for the construction of
+ * `managed_socket` class
+ */
 struct socket_hint
 {
   enum ip_version hostip_version;
@@ -54,7 +56,10 @@ struct socket_hint
               const ip_protocol ipproto);
 };
 
-/* wrapper around addrinfo with iterators */
+/* wrapper around `struct addrinfo` with the following features:
+ * - Iterator implementation to loop over the list
+ * - Equality Comparison operators for Iterator compatibilty
+ */
 struct addressinfo_handle
 {
 private:
@@ -107,9 +112,25 @@ public:
 
 }; // struct addressinfo_handle
 
-/* wrap the shitty C api inside the methods and use it
- * im not that smart, but i think avoiding the primitives
- * for now is the way to go
+/* Managed class that wraps over the C API.
+ * Not every function is wrapped over, only the handful ones that need
+ * be used in avantee. They are as follows:
+ * Return Type       Identifier    Params                 Wrapping-Over
+ * void              binds         bool                   bind
+ * void              connects      [None]                 connect
+ * void              listers       [None]                 listen
+ * icysock::ssize    receieve      void*,                 recv
+ *                                 icysock::size,
+ *                                 int (default)
+ * icysock::ssize    recieve_from  void*,                 recvfrom
+ *                                 icysock::size,
+ *                                 struct sockaddr*
+ *                                 icysock::size*
+ *                                 int (default)
+ * icysock::ssize   sends          std::string_view,      send
+ *                                 int (default)
+ * void             shutdowns      enum TransmissionEnd   shutdown
+ * void             try_next       [None]                 [None]
  */
 class managed_socket
 {

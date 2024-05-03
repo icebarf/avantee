@@ -57,7 +57,6 @@ using gsocket = int;
 #endif
 
 #include <cstdint>
-#include <errno.h>
 
 namespace icysock {
 
