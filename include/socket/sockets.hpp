@@ -3,6 +3,7 @@
 
 #include <iterator>
 #include <string_view>
+#include <sys/socket.h>
 
 #include "generic_sockets.hpp"
 
@@ -174,13 +175,18 @@ public:
   void listens(); // This will call binds() for you. This is because normally
                   // the accept()'ing socket needs to be "bound" to some socket
                   // addr.
-  icysock::ssize receive(void* buf, icysock::size s, int flags = 0);
+  icysock::ssize receive(void* ibuf, icysock::size s, int flags = 0);
   icysock::ssize receive_from(void* ibuf,
                               icysock::size bufsz,
                               struct sockaddr* sender_addr,
                               icysock::size* sndrsz,
                               int flags = 0);
   icysock::ssize sends(std::string_view buf, int flags = 0);
+  icysock::ssize send_to(void* ibuf,
+			 icysock::size bufsz,
+			 struct sockaddr* dest_addr,
+			 icysock::size destsz,
+			 int flags = 0);
   void shutdowns(enum TransmissionEnd reason);
   void try_next();
 

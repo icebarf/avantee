@@ -1,5 +1,5 @@
 #ifndef ICETEA_ERROR_UTILS_H
-#define ICETEA_ERROR_CODES_H
+#define ICETEA_ERROR_UTILS_H
 
 #include <exception>
 #include <string>
@@ -12,18 +12,20 @@ namespace sock_errors {
 enum class errc
 {
   success = 0,
-  bad_socket,
+  accept_failure,
   bad_addrinfolist,
-  getaddrinfo_failure,
-  setsockopt_failure,
+  bad_socket,
   bind_failure,
   connect_failure,
-  send_failure,
-  shutdown_failure,
+  getaddrinfo_failure,
+  listen_failure,
   receive_failure,
   receive_from_failure,
-  listen_failure,
-  accept_failure,
+  send_failure,
+  sendto_failure,
+  setsockopt_failure,
+  shutdown_failure,
+
 };
 
 

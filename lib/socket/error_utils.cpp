@@ -2,7 +2,7 @@
 #include <cstring>
 #include <string>
 
-#include "socket/error_codes.hpp"
+#include "socket/error_utils.hpp"
 
 namespace sock_errors {
 
@@ -22,18 +22,15 @@ make_error_code(errc e) noexcept
         case errc::success:
           return "Success";
 
+        case errc::accept_failure:
+          return std::string("accept() failed");
+
         case errc::bad_socket:
           return std::string("Bad Socket: ") +
                  std::string(std::strerror(errno));
 
-        case errc::getaddrinfo_failure:
-          return std::string("getaddrinfo() failed");
-
         case errc::bad_addrinfolist:
           return std::string("addrinfo list structure is bad");
-
-        case errc::setsockopt_failure:
-          return std::string("setsockopt() failed");
 
         case errc::bind_failure:
           return std::string("bind() failed");
@@ -41,11 +38,11 @@ make_error_code(errc e) noexcept
         case errc::connect_failure:
           return std::string("connect() failed");
 
-        case errc::send_failure:
-          return std::string("send() failed");
+        case errc::getaddrinfo_failure:
+          return std::string("getaddrinfo() failed");
 
-        case errc::shutdown_failure:
-          return std::string("shutdown() failed");
+        case errc::listen_failure:
+          return std::string("listen() failed");
 
         case errc::receive_failure:
           return std::string("recv() failed");
@@ -53,11 +50,17 @@ make_error_code(errc e) noexcept
         case errc::receive_from_failure:
           return std::string("recvfrom() failed");
 
-        case errc::listen_failure:
-          return std::string("listen() failed");
+        case errc::send_failure:
+          return std::string("send() failed");
 
-        case errc::accept_failure:
-          return std::string("accept() failed");
+        case errc::sendto_failure:
+          return std::string("sendto() failed");
+
+        case errc::setsockopt_failure:
+          return std::string("setsockopt() failed");
+
+        case errc::shutdown_failure:
+          return std::string("shutdown() failed");
 
         default:
           return "Unknown error";

@@ -1,5 +1,6 @@
 #include <cerrno>
 #include <cstring>
+#include <sys/socket.h>
 
 #include "socket/error_utils.hpp"
 #include "socket/generic_sockets.hpp"
@@ -47,8 +48,8 @@ addressinfo_handle::addressinfo_handle(const string hostname,
   int rv = getaddrinfo(
     hostname.empty() ? NULL : hostname.data(), service.data(), &hints, &info);
   if (rv != 0) {
-    throw sock_errors::SocketInitError(
-      icysock::errors::getaddrinfo_failure, gai_strerror(rv));
+    throw sock_errors::SocketInitError(icysock::errors::getaddrinfo_failure,
+                                       gai_strerror(rv));
   }
 
   /* store the pointer to the first last element of list */
@@ -152,7 +153,7 @@ addressinfo_handle::next()
 {
   if (info->ai_next == nullptr)
     throw sock_errors::APIError(sock_errors::errc::bad_addrinfolist,
-                                    "Reached the end of list.");
+                                "Reached the end of list.");
 
   info = info->ai_next;
 }
@@ -219,10 +220,9 @@ managed_socket::managed_socket(const struct socket_hint hint,
 
   if (socket_handle == BAD_SOCKET) {
     /* we know the entire list is most likely empty */
-    throw sock_errors::SocketInitError(
-      sock_errors::errc::bad_addrinfolist,
-      std::string("socket() failed due to") +
-        std::string(std::strerror(errno)));
+    throw sock_errors::SocketInitError(sock_errors::errc::bad_addrinfolist,
+                                       std::string("socket() failed due to") +
+                                         std::string(std::strerror(errno)));
   }
 }
 
@@ -292,7 +292,7 @@ icysock::gsocket managed_socket::accepts(/*, arg2, arg3 */)
     icysock::gsocket accepted = accept(socket_handle, nullptr, nullptr);
     if (accepted == SOCK_ERR) {
       throw sock_errors::APIError(sock_errors::errc::accept_failure,
-                                      std::string(std::strerror(errno)));
+                                  std::string(std::strerror(errno)));
     }
     return accepted;
   }
@@ -309,14 +309,14 @@ managed_socket::binds(bool reuse_socket)
           socket_handle, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) ==
         SOCK_ERR) {
       throw sock_errors::APIError(sock_errors::errc::setsockopt_failure,
-                                      std::string(std::strerror(errno)));
+                                  std::string(std::strerror(errno)));
     }
   }
 
   if (bind(socket_handle, valid_addr.ai_addr, valid_addr.ai_addrlen) ==
       SOCK_ERR) {
     throw sock_errors::APIError(sock_errors::errc::bind_failure,
-                                    std::string(std::strerror(errno)));
+                                std::string(std::strerror(errno)));
   }
 
   binds_called = true;
@@ -328,7 +328,7 @@ managed_socket::connects()
   if (connect(socket_handle, valid_addr.ai_addr, valid_addr.ai_addrlen) ==
       SOCK_ERR) {
     throw sock_errors::APIError(sock_errors::errc::connect_failure,
-                                    std::string(std::strerror(errno)));
+                                std::string(std::strerror(errno)));
   }
 }
 
@@ -340,7 +340,7 @@ managed_socket::listens()
     binds();
   if (listen(socket_handle, SOMAXCONN) == SOCK_ERR) {
     throw sock_errors::APIError(sock_errors::errc::listen_failure,
-                                    std::string(std::strerror(errno)));
+                                std::string(std::strerror(errno)));
   }
   is_listener = true;
 }
@@ -351,7 +351,7 @@ managed_socket::receive(void* buf, icysock::size s, int flags)
   icysock::ssize r = recv(socket_handle, buf, (size_t)s, flags);
   if (r == SOCK_ERR) {
     throw sock_errors::APIError(sock_errors::errc::receive_failure,
-                                    std::string(std::strerror(errno)));
+                                std::string(std::strerror(errno)));
   }
   return r;
 }
@@ -371,22 +371,37 @@ managed_socket::receive_from(void* ibuf,
                               reinterpret_cast<unsigned int*>(sndrsz));
   if (s == SOCK_ERR) {
     throw sock_errors::APIError(sock_errors::errc::receive_from_failure,
-                                    std::string(std::strerror(errno)));
+                                std::string(std::strerror(errno)));
   }
 
   return s;
 }
 
 icysock::ssize
-managed_socket::sends(std::string_view buf, int flags)
+managed_socket::sends(std::string_view ibuf, int flags)
 {
-  icysock::ssize r = send(socket_handle, buf.data(), buf.length(), flags);
+  icysock::ssize r = send(socket_handle, ibuf.data(), ibuf.length(), flags);
   if (r == SOCK_ERR) {
     throw sock_errors::APIError(sock_errors::errc::send_failure,
-                                    std::string(std::strerror(errno)));
+                                std::string(std::strerror(errno)));
   }
 
   return r;
+}
+
+icysock::ssize
+managed_socket::send_to(void* ibuf,
+                        icysock::size bufsz,
+                        struct sockaddr* dest_addr,
+                        icysock::size destsz,
+                        int flags)
+{
+  icysock::ssize r =
+    sendto(this->socket_handle, ibuf, bufsz, flags, dest_addr, destsz);
+  if (r == SOCK_ERR) {
+    throw sock_errors::APIError(sock_errors::errc::sendto_failure,
+                                std::string(std::strerror(errno)));
+  }
 }
 
 void
@@ -394,7 +409,7 @@ managed_socket::shutdowns(enum BetterSockets::TransmissionEnd reason)
 {
   if (shutdown(socket_handle, static_cast<int>(reason)) == SOCK_ERR) {
     throw sock_errors::APIError(sock_errors::errc::shutdown_failure,
-                                    std::string(std::strerror(errno)));
+                                std::string(std::strerror(errno)));
   }
 }
 
