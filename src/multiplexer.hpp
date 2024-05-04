@@ -20,10 +20,9 @@ struct multiplexer
     ERROR = POLLERR,
     INVALID = POLLNVAL,
   };
+
   BetterSocket::size fdcount;
   std::array<BetterSocket::gpollfd, MAX_SERVER_CONNECTIONS> poll_over;
-  std::array<BetterSocket::gsocket, MAX_SERVER_CONNECTIONS> readable;
-  std::array<BetterSocket::gsocket, MAX_SERVER_CONNECTIONS> writable;
 
   multiplexer();
   

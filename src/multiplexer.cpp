@@ -1,18 +1,14 @@
 #include "multiplexer.hpp"
 #include "socket/generic_sockets.hpp"
+
 #include <cstdio>
 #include <exception>
 
 multiplexer::multiplexer()
-  : poll_over{},
-    readable{},
-    writable{}
+  : poll_over{}
 {
   poll_over.fill(BetterSocket::gpollfd(-1, 0, 0));
-  readable.fill(-1);
-  writable.fill(-1);  
 }
-
 
 void
 multiplexer::watch(BetterSocket::gsocket socket, events ev)
@@ -24,28 +20,26 @@ multiplexer::watch(BetterSocket::gsocket socket, events ev)
 void
 multiplexer::unwatch(BetterSocket::gsocket socket)
 {
-  for(BetterSocket::size i = 0; i < fdcount; i++)
-    {
-      if(poll_over[i].fd == socket) {
-	// if only watching over one socket, then ignore.
-	// otherwise copy over it
-	if(i == 0)
-	  poll_over[i].fd = -1; // poll ignores -1 fds
+  for (BetterSocket::size i = 0; i < fdcount; i++) {
+    if (poll_over[i].fd == socket) {
+      // if only watching over one socket, then ignore.
+      // otherwise copy over it
+      if (i == 0)
+        poll_over[i].fd = -1; // poll ignores -1 fds
 
-	poll_over[i] = poll_over[fdcount - 1];
-	fdcount--;
-      }
+      poll_over[i] = poll_over[fdcount - 1];
+      fdcount--;
     }
+  }
 }
 
 void
 multiplexer::update_fd_event(BetterSocket::gsocket socket, events ev)
 {
-  for(BetterSocket::size i = 0; i < fdcount; i++)
-    {
-      if(poll_over[i].fd == socket) 
-	poll_over[i].events = ev;
-    }  
+  for (BetterSocket::size i = 0; i < fdcount; i++) {
+    if (poll_over[i].fd == socket)
+      poll_over[i].events = ev;
+  }
 }
 
 void

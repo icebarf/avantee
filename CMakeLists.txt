@@ -37,7 +37,7 @@ target_sources(avantee-server PUBLIC lib/socket/error_utils.cpp
                       PUBLIC lib/socket/generic_sockets.cpp
                       PUBLIC lib/socket/sockets.cpp
 		      PUBLIC src/multiplexer.cpp
-                      PUBLIC src/avantee-server.cpp
+#                      PUBLIC src/avantee-server.cpp
               )
 target_include_directories(avantee-server PRIVATE include/)
 if(${CMAKE_HOST_WIN32})
