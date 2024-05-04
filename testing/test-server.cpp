@@ -1,4 +1,3 @@
-#include "socket/error_utils.hpp"
 #include "socket/generic_sockets.hpp"
 #include "socket/sockets.hpp"
 
@@ -11,18 +10,18 @@
 int
 main()
 {
-  icysock::init();
-  BetterSockets::socket_hint hint(BetterSockets::ip_version::IpvAny,
-                                  BetterSockets::sock_kind::STREAM,
-                                  BetterSockets::sock_flags::USE_HOST_IP,
-                                  BetterSockets::ip_protocol::TCP);
-  BetterSockets::managed_socket ListenSock(hint, PORT);
+  BetterSocket::init();
+  BetterSocket::socket_hint hint(BetterSocket::ip_version::IpvAny,
+                                  BetterSocket::sock_kind::STREAM,
+                                  BetterSocket::sock_flags::USE_HOST_IP,
+                                  BetterSocket::ip_protocol::TCP);
+  BetterSocket::managed_socket ListenSock(hint, PORT);
   ListenSock.binds();
   ListenSock.listens();
 
-  BetterSockets::managed_socket ClientSock(ListenSock.accepts());
-  icysock::ssize iResult;
-  icysock::ssize iSendResult;
+  BetterSocket::managed_socket ClientSock(ListenSock.accepts());
+  BetterSocket::ssize iResult;
+  BetterSocket::ssize iSendResult;
 
   std::array<char, BUFLEN> recvbuf = { 0 };
   // Receive until the peer shuts down the connection
