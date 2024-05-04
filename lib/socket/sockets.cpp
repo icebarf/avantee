@@ -438,34 +438,4 @@ managed_socket::try_next()
   is_listener = false;
 }
 // finish managed_socket
-
-/* implementation of struct multiplexer*/
-BetterSocket::multiplexer::multiplexer()
-  : timeout{ 0, 0 }
-  , watching_over{ 0 }
-{
-}
-
-BetterSocket::multiplexer::multiplexer(long sec,
-                                       long usec,
-                                       BetterSocket::managed_socket watch_over)
-  : timeout(sec, usec)
-{
-  this->watching_over = watch_over.socket_handle;
-}
-
-int&
-BetterSocket::multiplexer::operator++()
-{
-  return ++watching_over;
-}
-
-int
-BetterSocket::multiplexer::operator++(int)
-{
-  int old = watching_over;
-  ++(*this); // prefix increment
-  return old;
-}
-
 } // namespace BetterSocket

@@ -220,17 +220,6 @@ struct fdset_wrapper
   fdset_wrapper& operator=(fdset_wrapper& rhs);
 };
 
-struct multiplexer
-{
-  struct timeval timeout;
-  int watching_over;
-  
-  multiplexer();
-  multiplexer(long sec, long usec, managed_socket watch_over);
-  int& operator++();   // prefix
-  int operator++(int); // postfix
-};
-
 /* Implementation of fd_set wrapper */
 
 template<BetterSocket::fd_type f>
