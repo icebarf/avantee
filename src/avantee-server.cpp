@@ -5,14 +5,17 @@
 #include "socket/error_utils.hpp"
 #include "socket/sockets.hpp"
 
-using namespace BetterSockets;
-using BetterSockets::fd_type;
+using namespace BetterSocket;
+using BetterSocket::fd_type;
+
+enum {
+  MAX_PACKET_LEN = 516,
+};
 
 constexpr std::string_view TFTP_PORT{ "69" };
-constexpr int MAX_PACKET_BYTES{ 516 };
 
 void
-checked_try_next(BetterSockets::managed_socket& s)
+checked_try_next(BetterSocket::managed_socket& s)
 {
   try {
     s.try_next();
@@ -25,7 +28,7 @@ checked_try_next(BetterSockets::managed_socket& s)
 }
 
 void
-watch(BetterSockets::managed_socket& tftp_listener)
+watch(BetterSocket::managed_socket& tftp_listener)
 {
 
   /* prepare for multiplexing */
@@ -35,7 +38,7 @@ watch(BetterSockets::managed_socket& tftp_listener)
 
   /* for receive_from to store information about client */
   struct sockaddr_storage client_info;
-  std::array<std::byte, MAX_PACKET_BYTES> packet;
+  std::array<std::byte, MAX_PACKET_LEN> packet;
   fdset_wrapper<fd_type::READ> readset{};
 
   while (true) {
@@ -53,7 +56,7 @@ watch(BetterSockets::managed_socket& tftp_listener)
       if (readset.isset(i)) {
         // new connection
         if (i == tftp_listener) {
-          icysock::size client_sz = sizeof client_info;
+          BetterSocket::size client_sz = sizeof client_info;
           tftp_listener.receive_from(
             packet.data(),
             packet.size(),
@@ -73,7 +76,7 @@ int
 main()
 {
   auto tftp_listener =
-    BetterSockets::managed_socket(socket_hint(ip_version::IpvAny,
+    BetterSocket::managed_socket(socket_hint(ip_version::IpvAny,
                                               sock_kind::DGRAM,
                                               sock_flags::USE_HOST_IP,
                                               ip_protocol::UDP),
