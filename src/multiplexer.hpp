@@ -2,7 +2,6 @@
 #define AVANTEE_MULTIPLEXER_H
 
 #include <array>
-#include <poll.h>
 
 #include "socket/generic_sockets.hpp"
 
