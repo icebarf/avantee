@@ -402,6 +402,7 @@ managed_socket::send_to(void* ibuf,
     throw sock_errors::APIError(sock_errors::errc::sendto_failure,
                                 std::string(std::strerror(errno)));
   }
+  return r;
 }
 
 void
