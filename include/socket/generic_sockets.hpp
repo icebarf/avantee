@@ -32,6 +32,8 @@ namespace icysock {
 /* introduce alias types on windows */
 using sockdata = WSADATA;
 using gsocket = SOCKET;
+
+using gpollfd = WSAPOLLFD;
 }
 
 #else
@@ -39,11 +41,12 @@ using gsocket = SOCKET;
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-namespace icysock {
+namespace BetterSocket {
 
 #define BAD_SOCKET -1
 #define SOCK_ERR -1
@@ -52,13 +55,14 @@ namespace icysock {
 using sockdata = int;
 using gsocket = int;
 
+using gpollfd = struct pollfd;
 }
 
 #endif
 
 #include <cstdint>
 
-namespace icysock {
+namespace BetterSocket {
 
 /* Signed return type for size */
 using ssize = std::intmax_t;
@@ -87,6 +91,10 @@ terminate();
  */
 int
 close_socket(gsocket s);
+
+/* Wrapper over `poll()`*/
+int
+gpoll(gpollfd* fds, size fdcnt, int timeout);
 
 /* Zero out the memory in range [p+0, p+len) */
 void*

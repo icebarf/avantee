@@ -3,7 +3,7 @@
 
 #include "socket/generic_sockets.hpp"
 
-namespace icysock {
+namespace BetterSocket {
 
 sockdata
 init()
@@ -13,8 +13,8 @@ init()
   SOCKDATA wsadata;
   result = WSAStartup(MAKEWORD(2, 2), &wsadata);
   if (result != 0) {
-    fprintf(stderr, "icysock: WSAStartup failed with code: %d\n", result);
-    perror("icysock: ");
+    fprintf(stderr, "BetterSocket: WSAStartup failed with code: %d\n", result);
+    perror("BetterSocket: ");
     WSACleanup();
     return wsadata;
   }
@@ -32,22 +32,22 @@ terminate()
     switch (WSAGetLastError()) {
       case WSANOTINITIALISED:
         fprintf(stderr,
-                "icysock: A successful WSAStartup call did not occur!\n");
+                "BetterSocket: A successful WSAStartup call did not occur!\n");
         break;
 
       case WSAENETDOWN:
-        fprintf(stderr, "icysock: The network subsystem has failed\n");
+        fprintf(stderr, "BetterSocket: The network subsystem has failed\n");
         break;
 
       case WSAEINPROGRESS:
-        fprintf(
-          stderr,
-          "icysock: A blocking Windows Sockets 1.1 call is in progress, or the "
-          "service provider is still processing a callback function. \n");
+        fprintf(stderr,
+                "BetterSocket: A blocking Windows Sockets 1.1 call is in "
+                "progress, or the "
+                "service provider is still processing a callback function. \n");
         break;
 
       default:
-        fprintf(stderr, "icysock: WSACleanup() - Unknown error.\n");
+        fprintf(stderr, "BetterSocket: WSACleanup() - Unknown error.\n");
     }
   }
 #endif
@@ -63,6 +63,16 @@ close_socket(gsocket s)
 #endif
 }
 
+int
+gpoll(gpollfd* fds, size fdcnt, int timeout)
+{
+#if defined(ICY_ON_WINDOWS)
+  return WSAPoll(fds, fdcnt, timeout);
+#else
+  return poll(fds, fdcnt, timeout);
+#endif
+}
+
 void*
 zero(void* p, size len)
 {
@@ -73,5 +83,4 @@ zero(void* p, size len)
   return memset(p, 0, len);
 #endif
 }
-
 }

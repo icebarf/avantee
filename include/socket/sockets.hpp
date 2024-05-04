@@ -3,11 +3,10 @@
 
 #include <iterator>
 #include <string_view>
-#include <sys/socket.h>
 
 #include "generic_sockets.hpp"
 
-namespace BetterSockets {
+namespace BetterSocket {
 
 enum class TransmissionEnd
 {
@@ -120,15 +119,15 @@ public:
  * void              binds         bool                   bind
  * void              connects      [None]                 connect
  * void              listers       [None]                 listen
- * icysock::ssize    receieve      void*,                 recv
- *                                 icysock::size,
+ * BetterSocket::ssize    receieve      void*,                 recv
+ *                                 BetterSocket::size,
  *                                 int (default)
- * icysock::ssize    recieve_from  void*,                 recvfrom
- *                                 icysock::size,
+ * BetterSocket::ssize    recieve_from  void*,                 recvfrom
+ *                                 BetterSocket::size,
  *                                 struct sockaddr*
- *                                 icysock::size*
+ *                                 BetterSocket::size*
  *                                 int (default)
- * icysock::ssize   sends          std::string_view,      send
+ * BetterSocket::ssize   sends          std::string_view,      send
  *                                 int (default)
  * void             shutdowns      enum TransmissionEnd   shutdown
  * void             try_next       [None]                 [None]
@@ -144,9 +143,9 @@ class managed_socket
 
 public:
   struct addrinfo valid_addr = {};
-  icysock::gsocket socket_handle{ BAD_SOCKET };
+  BetterSocket::gsocket socket_handle{ BAD_SOCKET };
   managed_socket();
-  managed_socket(icysock::gsocket s);
+  managed_socket(BetterSocket::gsocket s);
   managed_socket(managed_socket&& ms);
   managed_socket(const struct socket_hint hint,
                  const std::string service,
@@ -169,23 +168,23 @@ public:
   // NULL those arguments by defualt. As soon
   // as I have a proper thought out solution, I
   // shall implement it.
-  [[nodiscard("Accepted socket must be used.")]] icysock::gsocket accepts();
+  [[nodiscard("Accepted socket must be used.")]] BetterSocket::gsocket accepts();
   void binds(bool reuse_socket = true);
   void connects();
   void listens(); // This will call binds() for you. This is because normally
                   // the accept()'ing socket needs to be "bound" to some socket
                   // addr.
-  icysock::ssize receive(void* ibuf, icysock::size s, int flags = 0);
-  icysock::ssize receive_from(void* ibuf,
-                              icysock::size bufsz,
+  BetterSocket::ssize receive(void* ibuf, BetterSocket::size s, int flags = 0);
+  BetterSocket::ssize receive_from(void* ibuf,
+                              BetterSocket::size bufsz,
                               struct sockaddr* sender_addr,
-                              icysock::size* sndrsz,
+                              BetterSocket::size* sndrsz,
                               int flags = 0);
-  icysock::ssize sends(std::string_view buf, int flags = 0);
-  icysock::ssize send_to(void* ibuf,
-			 icysock::size bufsz,
+  BetterSocket::ssize sends(std::string_view buf, int flags = 0);
+  BetterSocket::ssize send_to(void* ibuf,
+			 BetterSocket::size bufsz,
 			 struct sockaddr* dest_addr,
-			 icysock::size destsz,
+			 BetterSocket::size destsz,
 			 int flags = 0);
   void shutdowns(enum TransmissionEnd reason);
   void try_next();
@@ -211,11 +210,11 @@ struct fdset_wrapper
   fdset_wrapper(fd_set s);
   fdset_wrapper(fdset_wrapper& s);
   fdset_wrapper(fdset_wrapper&& s);
-  void append(icysock::gsocket s);
+  void append(BetterSocket::gsocket s);
 
   void append(managed_socket& s);
   void empty_out();
-  int isset(icysock::gsocket s);
+  int isset(BetterSocket::gsocket s);
   int isset(managed_socket& s);
 
   fdset_wrapper& operator=(fdset_wrapper& rhs);
@@ -225,38 +224,39 @@ struct multiplexer
 {
   struct timeval timeout;
   int watching_over;
+  
   multiplexer();
-  multiplexer(long sec, long usec, int watch_over);
+  multiplexer(long sec, long usec, managed_socket watch_over);
   int& operator++();   // prefix
   int operator++(int); // postfix
 };
 
 /* Implementation of fd_set wrapper */
 
-template<BetterSockets::fd_type f>
-inline BetterSockets::fdset_wrapper<f>::fdset_wrapper()
+template<BetterSocket::fd_type f>
+inline BetterSocket::fdset_wrapper<f>::fdset_wrapper()
   : set{}
   , type{ f }
 {
   FD_ZERO(&set);
 }
 
-template<BetterSockets::fd_type f>
-inline BetterSockets::fdset_wrapper<f>::fdset_wrapper(fd_set s)
+template<BetterSocket::fd_type f>
+inline BetterSocket::fdset_wrapper<f>::fdset_wrapper(fd_set s)
   : set{ s }
   , type{ f }
 {
 }
 
-template<BetterSockets::fd_type f>
-inline BetterSockets::fdset_wrapper<f>::fdset_wrapper(fdset_wrapper<f>& s)
+template<BetterSocket::fd_type f>
+inline BetterSocket::fdset_wrapper<f>::fdset_wrapper(fdset_wrapper<f>& s)
   : set{ s.set }
   , type{ s.type }
 {
 }
 
-template<BetterSockets::fd_type f>
-inline BetterSockets::fdset_wrapper<f>::fdset_wrapper(fdset_wrapper<f>&& s)
+template<BetterSocket::fd_type f>
+inline BetterSocket::fdset_wrapper<f>::fdset_wrapper(fdset_wrapper<f>&& s)
   : set{ s.set }
   , type{ s.type }
 {
@@ -265,35 +265,35 @@ inline BetterSockets::fdset_wrapper<f>::fdset_wrapper(fdset_wrapper<f>&& s)
   this->empty_out();
 }
 
-template<BetterSockets::fd_type f>
-void inline BetterSockets::fdset_wrapper<f>::append(icysock::gsocket s)
+template<BetterSocket::fd_type f>
+void inline BetterSocket::fdset_wrapper<f>::append(BetterSocket::gsocket s)
 {
   FD_SET(s, &set);
 }
 
-template<BetterSockets::fd_type f>
-void inline BetterSockets::fdset_wrapper<f>::append(managed_socket& s)
+template<BetterSocket::fd_type f>
+void inline BetterSocket::fdset_wrapper<f>::append(managed_socket& s)
 {
   FD_SET(s.socket_handle, &set);
 }
 
-template<BetterSockets::fd_type f>
+template<BetterSocket::fd_type f>
 inline void
-BetterSockets::fdset_wrapper<f>::empty_out()
+BetterSocket::fdset_wrapper<f>::empty_out()
 {
   FD_ZERO(&set);
 }
 
-template<BetterSockets::fd_type f>
+template<BetterSocket::fd_type f>
 inline int
-BetterSockets::fdset_wrapper<f>::isset(icysock::gsocket s)
+BetterSocket::fdset_wrapper<f>::isset(BetterSocket::gsocket s)
 {
   return FD_ISSET(s, &set);
 }
 
-template<BetterSockets::fd_type f>
+template<BetterSocket::fd_type f>
 inline int
-BetterSockets::fdset_wrapper<f>::isset(BetterSockets::managed_socket& s)
+BetterSocket::fdset_wrapper<f>::isset(BetterSocket::managed_socket& s)
 {
   return FD_ISSET(s.socket_handle, &set);
 }
@@ -309,6 +309,6 @@ fdset_wrapper<f>::operator=(fdset_wrapper<f>& rhs)
 
 // finish fdset_wrapper
 
-} // namespace BetterSockets
+} // namespace BetterSocket
 
 #endif // ICETEA_SOCKETS_H
