@@ -1,10 +1,9 @@
 #include <cerrno>
 #include <cstring>
-#include <sys/socket.h>
 
 #include "socket/error_utils.hpp"
 #include "socket/generic_sockets.hpp"
-#include "socket/sockets.hpp"
+#include "socket/socket.hpp"
 
 using namespace std;
 
@@ -49,7 +48,7 @@ addressinfo_handle::addressinfo_handle(const string hostname,
     hostname.empty() ? NULL : hostname.data(), service.data(), &hints, &info);
   if (rv != 0) {
     throw sock_errors::SocketInitError(
-      BetterSocket::errors::getaddrinfo_failure, gai_strerror(rv));
+				       sock_errors::errc::getaddrinfo_failure, gai_strerror(rv));
   }
 
   /* store the pointer to the first last element of list */
