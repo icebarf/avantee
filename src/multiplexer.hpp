@@ -2,30 +2,35 @@
 #define AVANTEE_MULTIPLEXER_H
 
 #include <array>
+#include <utility>
 
 #include "socket/generic_sockets.hpp"
 
+#define TYPEOF(Value) __decltype(Value)
+
 struct multiplexer
 {
-  enum
+
+  enum class constants
   {
     MAX_SERVER_CONNECTIONS = 64,
     POLL_FOR = 0,
   };
 
-  enum events
-  {
+  BetterSocket::size fdcount;
+  std::array<BetterSocket::gpollfd,
+             std::to_underlying(constants::MAX_SERVER_CONNECTIONS)>
+    poll_over;
+
+  enum class events : TYPEOF(TYPEOF(poll_over)::value_type::events){
     INPUT = POLLIN,
     OUTPUT = POLLOUT,
     ERROR = POLLERR,
     INVALID = POLLNVAL,
   };
 
-  BetterSocket::size fdcount;
-  std::array<BetterSocket::gpollfd, MAX_SERVER_CONNECTIONS> poll_over;
-
   multiplexer();
-  
+
   /* add socket to be polled over */
   void watch(BetterSocket::gsocket socket, events ev);
   /* remove socket from polling */
@@ -40,5 +45,7 @@ struct multiplexer
   template<multiplexer::events Event>
   bool socket_available_for(BetterSocket::gsocket sock);
 };
+
+#undef TYPEOF // i dont need you anymore :(
 
 #endif

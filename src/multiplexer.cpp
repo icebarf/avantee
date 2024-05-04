@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <exception>
+#include <utility>
 
 multiplexer::multiplexer()
   : poll_over{}
@@ -14,7 +15,7 @@ void
 multiplexer::watch(BetterSocket::gsocket socket, events ev)
 {
   poll_over[fdcount].fd = socket;
-  poll_over[fdcount++].events = ev;
+  poll_over[fdcount++].events = std::to_underlying(ev);
 }
 
 void
@@ -38,15 +39,15 @@ multiplexer::update_fd_event(BetterSocket::gsocket socket, events ev)
 {
   for (BetterSocket::size i = 0; i < fdcount; i++) {
     if (poll_over[i].fd == socket)
-      poll_over[i].events = ev;
+      poll_over[i].events = std::to_underlying(ev);
   }
 }
 
 void
 multiplexer::poll_io()
 {
-  int polled =
-    BetterSocket::gpoll(poll_over.data(), fdcount, multiplexer::POLL_FOR);
+  int polled = BetterSocket::gpoll(
+    poll_over.data(), fdcount, SCAST(int, constants::POLL_FOR));
 
   if (polled == SOCK_ERR) {
     std::perror("mutiplexer::poll_io -> poll()");
@@ -59,7 +60,8 @@ bool
 multiplexer::socket_available_for(BetterSocket::gsocket sock)
 {
   for (BetterSocket::size i = 0; i < fdcount; i++) {
-    if (poll_over[i].fd == sock && poll_over[i].revents && Event)
+    if ((poll_over[i].fd == sock) &&
+        (poll_over[i].revents & std::to_underlying(Event)))
       return true;
   }
   return false;
