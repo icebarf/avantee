@@ -152,7 +152,8 @@ public:
                  const std::string hostname = "");
 
   ~managed_socket();
-  bool is_empty();
+  bool is_empty() const;
+  BetterSocket::gsocket underlying_socket() const;
   friend bool operator==(const int& lhs, const managed_socket& rhs);
   friend bool operator!=(const int& lhs, const managed_socket& rhs);
   friend bool operator==(const managed_socket& lhs, const int& rhs);

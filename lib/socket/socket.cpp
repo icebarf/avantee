@@ -47,8 +47,8 @@ addressinfo_handle::addressinfo_handle(const string hostname,
   int rv = getaddrinfo(
     hostname.empty() ? NULL : hostname.data(), service.data(), &hints, &info);
   if (rv != 0) {
-    throw sock_errors::SocketInitError(
-				       sock_errors::errc::getaddrinfo_failure, gai_strerror(rv));
+    throw sock_errors::SocketInitError(sock_errors::errc::getaddrinfo_failure,
+                                       gai_strerror(rv));
   }
 
   /* store the pointer to the first last element of list */
@@ -240,9 +240,15 @@ managed_socket::init_socket_handle(struct addrinfo* addr)
 }
 
 bool
-managed_socket::is_empty()
+managed_socket::is_empty() const
 {
   return empty;
+}
+
+gsocket
+managed_socket::underlying_socket() const
+{
+  return socket_handle;
 }
 
 bool
@@ -396,8 +402,12 @@ managed_socket::send_to(void* ibuf,
                         BetterSocket::size destsz,
                         int flags)
 {
-  BetterSocket::ssize r =
-    sendto(this->socket_handle, ibuf, bufsz, flags, dest_addr, destsz);
+  BetterSocket::ssize r = sendto(this->socket_handle,
+                                 ibuf,
+                                 bufsz,
+                                 flags,
+                                 dest_addr,
+                                 static_cast<unsigned int>(destsz));
   if (r == SOCK_ERR) {
     throw sock_errors::APIError(sock_errors::errc::sendto_failure,
                                 std::string(std::strerror(errno)));
