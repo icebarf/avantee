@@ -42,7 +42,7 @@ enum class ip_protocol
 };
 
 /* structure to be used for the construction of
- * `managed_socket` class
+ * `bsocket` class
  */
 struct socket_hint
 {
@@ -132,34 +132,34 @@ public:
  * void             shutdowns      enum TransmissionEnd   shutdown
  * void             try_next       [None]                 [None]
  */
-class managed_socket
+class bsocket
 {
   bool binds_called{ false };
   bool empty{ true };
   bool is_listener{ false };
   addressinfo_handle addressinfolist = {};
 
-  void init_socket_handle(struct addrinfo* a);
+  void init_raw_socket(struct addrinfo* a);
 
 public:
   struct addrinfo valid_addr = {};
-  BetterSocket::gsocket socket_handle{ BAD_SOCKET };
-  managed_socket();
-  managed_socket(BetterSocket::gsocket s);
-  managed_socket(managed_socket&& ms);
-  managed_socket(const struct socket_hint hint,
+  BetterSocket::gsocket raw_socket{ BAD_SOCKET };
+  bsocket();
+  bsocket(BetterSocket::gsocket s);
+  bsocket(bsocket&& ms);
+  bsocket(const struct socket_hint hint,
                  const std::string service,
                  const std::string hostname = "");
 
-  ~managed_socket();
+  ~bsocket();
   bool is_empty() const;
   BetterSocket::gsocket underlying_socket() const;
-  friend bool operator==(const int& lhs, const managed_socket& rhs);
-  friend bool operator!=(const int& lhs, const managed_socket& rhs);
-  friend bool operator==(const managed_socket& lhs, const int& rhs);
-  friend bool operator!=(const managed_socket& lhs, const int& rhs);
-  friend bool operator==(const managed_socket& lhs, const managed_socket& rhs);
-  friend bool operator!=(const managed_socket& lhs, const managed_socket& rhs);
+  friend bool operator==(const int& lhs, const bsocket& rhs);
+  friend bool operator!=(const int& lhs, const bsocket& rhs);
+  friend bool operator==(const bsocket& lhs, const int& rhs);
+  friend bool operator!=(const bsocket& lhs, const int& rhs);
+  friend bool operator==(const bsocket& lhs, const bsocket& rhs);
+  friend bool operator!=(const bsocket& lhs, const bsocket& rhs);
 
   // `man 2 accept` takes 3 arguments, two of
   // which will contain relevant information
@@ -190,7 +190,7 @@ public:
   void shutdowns(enum TransmissionEnd reason);
   void try_next();
 
-}; // class ManagedSocket
+}; // class bsocket
 
 /* Abstraction for fd_set */
 
@@ -213,10 +213,10 @@ struct fdset_wrapper
   fdset_wrapper(fdset_wrapper&& s);
   void append(BetterSocket::gsocket s);
 
-  void append(managed_socket& s);
+  void append(bsocket& s);
   void empty_out();
   int isset(BetterSocket::gsocket s);
-  int isset(managed_socket& s);
+  int isset(bsocket& s);
 
   fdset_wrapper& operator=(fdset_wrapper& rhs);
 };
@@ -262,9 +262,9 @@ void inline BetterSocket::fdset_wrapper<f>::append(BetterSocket::gsocket s)
 }
 
 template<BetterSocket::fd_type f>
-void inline BetterSocket::fdset_wrapper<f>::append(managed_socket& s)
+void inline BetterSocket::fdset_wrapper<f>::append(bsocket& s)
 {
-  FD_SET(s.socket_handle, &set);
+  FD_SET(s.underlying_socket(), &set);
 }
 
 template<BetterSocket::fd_type f>
@@ -283,9 +283,9 @@ BetterSocket::fdset_wrapper<f>::isset(BetterSocket::gsocket s)
 
 template<BetterSocket::fd_type f>
 inline int
-BetterSocket::fdset_wrapper<f>::isset(BetterSocket::managed_socket& s)
+BetterSocket::fdset_wrapper<f>::isset(BetterSocket::bsocket& s)
 {
-  return FD_ISSET(s.socket_handle, &set);
+  return FD_ISSET(s.underlying_socket(), &set);
 }
 
 template<fd_type f>

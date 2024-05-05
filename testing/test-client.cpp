@@ -17,7 +17,7 @@ main(int argc, char** argv)
                                BetterSocket::sock_kind::STREAM,
                                BetterSocket::sock_flags::USE_HOST_IP,
                                BetterSocket::ip_protocol::TCP);
-  BetterSocket::managed_socket sock(h, PORT, argv[1]);
+  BetterSocket::bsocket sock(h, PORT, argv[1]);
   sock.connects();
 
   const char* sendbuf = "this is a test";

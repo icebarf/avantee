@@ -159,47 +159,47 @@ addressinfo_handle::next()
 
 // finish addressinfo_handle
 
-/******** struct managed_socket ************/
+/******** struct bsocket ************/
 
-managed_socket::managed_socket()
+bsocket::bsocket()
   : binds_called(false)
   , empty(false)
   , is_listener(false)
   , addressinfolist()
-  , socket_handle(BAD_SOCKET)
+  , raw_socket(BAD_SOCKET)
 {
 }
 
-managed_socket::managed_socket(BetterSocket::gsocket s)
+bsocket::bsocket(BetterSocket::gsocket s)
   : binds_called(false)
   , empty(false)
   , is_listener(false)
   , addressinfolist()
-  , socket_handle(s)
+  , raw_socket(s)
 {
   if (s == SOCK_ERR)
     throw sock_errors::SocketInitError(
       sock_errors::errc::bad_socket,
-      std::string("Creation of managed_socket failed. Invalid argument."));
+      std::string("Creation of bsocket failed. Invalid argument."));
 }
 
-managed_socket::managed_socket(managed_socket&& ms)
+bsocket::bsocket(bsocket&& ms)
   : binds_called(ms.binds_called)
   , empty(ms.empty)
   , is_listener(ms.is_listener)
   , addressinfolist(ms.addressinfolist)
-  , socket_handle(ms.socket_handle)
+  , raw_socket(ms.raw_socket)
 {
 }
 
-managed_socket::managed_socket(const struct socket_hint hint,
+bsocket::bsocket(const struct socket_hint hint,
                                const string service,
                                const string hostname)
   : binds_called(false)
   , empty(false)
   , is_listener(false)
   , addressinfolist(hostname, service, hint)
-  , socket_handle{ BAD_SOCKET }
+  , raw_socket{ BAD_SOCKET }
 {
   /* This commented out snippet of code needs to be fixed.
    * I think that the iterators for addresinfo_handle structure aare broken.
@@ -207,17 +207,17 @@ managed_socket::managed_socket(const struct socket_hint hint,
    * Then this shall be fixed.
    */
   for (auto& ainfo : addressinfolist) {
-    init_socket_handle(&ainfo);
+    init_raw_socket(&ainfo);
     // socket is bad, this addrinfo structure didn't work
     // better try the next one until it works... or all of them fail.
-    if (socket_handle == BAD_SOCKET)
+    if (raw_socket == BAD_SOCKET)
       continue;
 
     valid_addr = ainfo;
     break;
   }
 
-  if (socket_handle == BAD_SOCKET) {
+  if (raw_socket == BAD_SOCKET) {
     /* we know the entire list is most likely empty */
     throw sock_errors::SocketInitError(sock_errors::errc::bad_addrinfolist,
                                        std::string("socket() failed due to") +
@@ -225,76 +225,76 @@ managed_socket::managed_socket(const struct socket_hint hint,
   }
 }
 
-managed_socket::~managed_socket()
+bsocket::~bsocket()
 {
-  BetterSocket::close_socket(socket_handle);
+  BetterSocket::close_socket(raw_socket);
   empty = true;
   is_listener = false;
   binds_called = false;
 }
 
 void
-managed_socket::init_socket_handle(struct addrinfo* addr)
+bsocket::init_raw_socket(struct addrinfo* addr)
 {
-  socket_handle = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+  raw_socket = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 }
 
 bool
-managed_socket::is_empty() const
+bsocket::is_empty() const
 {
   return empty;
 }
 
 gsocket
-managed_socket::underlying_socket() const
+bsocket::underlying_socket() const
 {
-  return socket_handle;
+  return raw_socket;
 }
 
 bool
-operator==(const int& lhs, const managed_socket& rhs)
+operator==(const int& lhs, const bsocket& rhs)
 {
-  return lhs == rhs.socket_handle;
+  return lhs == rhs.underlying_socket();
 }
 
 bool
-operator!=(const int& lhs, const managed_socket& rhs)
-{
-  return !(lhs == rhs);
-}
-
-bool
-operator==(const managed_socket& lhs, const int& rhs)
-{
-  return lhs.socket_handle == rhs;
-}
-
-bool
-operator!=(const managed_socket& lhs, const int& rhs)
+operator!=(const int& lhs, const bsocket& rhs)
 {
   return !(lhs == rhs);
 }
 
 bool
-operator==(const managed_socket& lhs, const managed_socket& rhs)
+operator==(const bsocket& lhs, const int& rhs)
+{
+  return lhs.underlying_socket() == rhs;
+}
+
+bool
+operator!=(const bsocket& lhs, const int& rhs)
+{
+  return !(lhs == rhs);
+}
+
+bool
+operator==(const bsocket& lhs, const bsocket& rhs)
 {
   return lhs.empty == rhs.empty && lhs.addressinfolist == rhs.addressinfolist &&
-         lhs.socket_handle == rhs.socket_handle;
+         lhs.underlying_socket() == rhs.underlying_socket();
 }
 
 bool
-operator!=(const managed_socket& lhs, const managed_socket& rhs)
+operator!=(const bsocket& lhs, const bsocket& rhs)
 {
   return !(lhs == rhs); // use the previously defined equality
 }
 
 /* implement arg2 and arg3 at a later date, more info in header file. */
-BetterSocket::gsocket managed_socket::accepts(/*, arg2, arg3 */)
+BetterSocket::gsocket bsocket::accepts(/*, arg2, arg3 */)
 {
   /* Only call accept() on the socket if listen() has been called before.
    * Otherwise do nothing and return an invalid socket. */
   if (is_listener) {
-    BetterSocket::gsocket accepted = accept(socket_handle, nullptr, nullptr);
+    BetterSocket::gsocket accepted = accept(raw_socket, nullptr, nullptr);
     if (accepted == SOCK_ERR) {
       throw sock_errors::APIError(sock_errors::errc::accept_failure,
                                   std::string(std::strerror(errno)));
@@ -306,19 +306,19 @@ BetterSocket::gsocket managed_socket::accepts(/*, arg2, arg3 */)
 }
 
 void
-managed_socket::binds(bool reuse_socket)
+bsocket::binds(bool reuse_socket)
 {
   if (reuse_socket) {
     int enable = 1;
     if (setsockopt(
-          socket_handle, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) ==
+          raw_socket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) ==
         SOCK_ERR) {
       throw sock_errors::APIError(sock_errors::errc::setsockopt_failure,
                                   std::string(std::strerror(errno)));
     }
   }
 
-  if (bind(socket_handle, valid_addr.ai_addr, valid_addr.ai_addrlen) ==
+  if (bind(raw_socket, valid_addr.ai_addr, valid_addr.ai_addrlen) ==
       SOCK_ERR) {
     throw sock_errors::APIError(sock_errors::errc::bind_failure,
                                 std::string(std::strerror(errno)));
@@ -328,9 +328,9 @@ managed_socket::binds(bool reuse_socket)
 }
 
 void
-managed_socket::connects()
+bsocket::connects()
 {
-  if (connect(socket_handle, valid_addr.ai_addr, valid_addr.ai_addrlen) ==
+  if (connect(raw_socket, valid_addr.ai_addr, valid_addr.ai_addrlen) ==
       SOCK_ERR) {
     throw sock_errors::APIError(sock_errors::errc::connect_failure,
                                 std::string(std::strerror(errno)));
@@ -338,12 +338,12 @@ managed_socket::connects()
 }
 
 void
-managed_socket::listens()
+bsocket::listens()
 {
   /* call binds if it has not been called before */
   if (!binds_called)
     binds();
-  if (listen(socket_handle, SOMAXCONN) == SOCK_ERR) {
+  if (listen(raw_socket, SOMAXCONN) == SOCK_ERR) {
     throw sock_errors::APIError(sock_errors::errc::listen_failure,
                                 std::string(std::strerror(errno)));
   }
@@ -351,9 +351,9 @@ managed_socket::listens()
 }
 
 BetterSocket::ssize
-managed_socket::receive(void* buf, BetterSocket::size s, int flags)
+bsocket::receive(void* buf, BetterSocket::size s, int flags)
 {
-  BetterSocket::ssize r = recv(socket_handle, buf, (size_t)s, flags);
+  BetterSocket::ssize r = recv(raw_socket, buf, (size_t)s, flags);
   if (r == SOCK_ERR) {
     throw sock_errors::APIError(sock_errors::errc::receive_failure,
                                 std::string(std::strerror(errno)));
@@ -362,13 +362,13 @@ managed_socket::receive(void* buf, BetterSocket::size s, int flags)
 }
 
 BetterSocket::ssize
-managed_socket::receive_from(void* ibuf,
+bsocket::receive_from(void* ibuf,
                              BetterSocket::size bufsz,
                              struct sockaddr* sender_addr,
                              BetterSocket::size* sndrsz,
                              int flags)
 {
-  BetterSocket::ssize s = recvfrom(socket_handle,
+  BetterSocket::ssize s = recvfrom(raw_socket,
                                    ibuf,
                                    bufsz,
                                    flags,
@@ -383,10 +383,10 @@ managed_socket::receive_from(void* ibuf,
 }
 
 BetterSocket::ssize
-managed_socket::sends(std::string_view ibuf, int flags)
+bsocket::sends(std::string_view ibuf, int flags)
 {
   BetterSocket::ssize r =
-    send(socket_handle, ibuf.data(), ibuf.length(), flags);
+    send(raw_socket, ibuf.data(), ibuf.length(), flags);
   if (r == SOCK_ERR) {
     throw sock_errors::APIError(sock_errors::errc::send_failure,
                                 std::string(std::strerror(errno)));
@@ -396,13 +396,13 @@ managed_socket::sends(std::string_view ibuf, int flags)
 }
 
 BetterSocket::ssize
-managed_socket::send_to(void* ibuf,
+bsocket::send_to(void* ibuf,
                         BetterSocket::size bufsz,
                         struct sockaddr* dest_addr,
                         BetterSocket::size destsz,
                         int flags)
 {
-  BetterSocket::ssize r = sendto(this->socket_handle,
+  BetterSocket::ssize r = sendto(this->raw_socket,
                                  ibuf,
                                  bufsz,
                                  flags,
@@ -416,18 +416,18 @@ managed_socket::send_to(void* ibuf,
 }
 
 void
-managed_socket::shutdowns(enum BetterSocket::TransmissionEnd reason)
+bsocket::shutdowns(enum BetterSocket::TransmissionEnd reason)
 {
-  if (shutdown(socket_handle, static_cast<int>(reason)) == SOCK_ERR) {
+  if (shutdown(raw_socket, static_cast<int>(reason)) == SOCK_ERR) {
     throw sock_errors::APIError(sock_errors::errc::shutdown_failure,
                                 std::string(std::strerror(errno)));
   }
 }
 
 void
-managed_socket::try_next()
+bsocket::try_next()
 {
-  BetterSocket::close_socket(socket_handle);
+  BetterSocket::close_socket(raw_socket);
 
   try {
     addressinfolist.next();
@@ -436,8 +436,8 @@ managed_socket::try_next()
   }
 
   valid_addr = *addressinfolist.info;
-  init_socket_handle(addressinfolist.info);
-  if (socket_handle == BAD_SOCKET) {
+  init_raw_socket(addressinfolist.info);
+  if (raw_socket == BAD_SOCKET) {
     throw sock_errors::APIError(
       sock_errors::errc::bad_socket,
       "initialising socket failed while trying the next 'struct addrinfo'");
@@ -446,5 +446,5 @@ managed_socket::try_next()
   empty = false;
   is_listener = false;
 }
-// finish managed_socket
+// finish bsocket
 } // namespace BetterSocket

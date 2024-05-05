@@ -15,11 +15,11 @@ main()
                                   BetterSocket::sock_kind::STREAM,
                                   BetterSocket::sock_flags::USE_HOST_IP,
                                   BetterSocket::ip_protocol::TCP);
-  BetterSocket::managed_socket ListenSock(hint, PORT);
+  BetterSocket::bsocket ListenSock(hint, PORT);
   ListenSock.binds();
   ListenSock.listens();
 
-  BetterSocket::managed_socket ClientSock(ListenSock.accepts());
+  BetterSocket::bsocket ClientSock(ListenSock.accepts());
   BetterSocket::ssize iResult;
   BetterSocket::ssize iSendResult;
 
