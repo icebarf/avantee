@@ -1,12 +1,15 @@
-#include "multiplexer.hpp"
-#include "socket/generic_sockets.hpp"
-
 #include <cstdio>
 #include <exception>
 #include <utility>
 
+#include "multiplexer.hpp"
+#include "socket/generic_sockets.hpp"
+
+#define SCAST(Type, e) static_cast<Type>(e)
+
 multiplexer::multiplexer()
-  : poll_over{}
+  : fdcount{ 0 }
+  , poll_over{}
 {
   poll_over.fill(BetterSocket::gpollfd(-1, 0, 0));
 }
@@ -53,16 +56,4 @@ multiplexer::poll_io()
     std::perror("mutiplexer::poll_io -> poll()");
     std::terminate();
   }
-}
-
-template<multiplexer::events Event>
-bool
-multiplexer::socket_available_for(BetterSocket::gsocket sock)
-{
-  for (BetterSocket::size i = 0; i < fdcount; i++) {
-    if ((poll_over[i].fd == sock) &&
-        (poll_over[i].revents & std::to_underlying(Event)))
-      return true;
-  }
-  return false;
 }

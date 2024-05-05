@@ -46,6 +46,20 @@ struct multiplexer
   bool socket_available_for(BetterSocket::gsocket sock);
 };
 
+
+template<multiplexer::events Event>
+bool
+multiplexer::socket_available_for(BetterSocket::gsocket sock)
+{
+  for (BetterSocket::size i = 0; i < fdcount; i++) {
+    if ((poll_over[i].fd == sock) &&
+        (poll_over[i].revents & std::to_underlying(Event)))
+      return true;
+  }
+  return false;
+}
+
+
 #undef TYPEOF // i dont need you anymore :(
 
 #endif
