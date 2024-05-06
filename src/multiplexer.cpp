@@ -49,7 +49,7 @@ multiplexer::update_fd_event(BetterSocket::gsocket socket, events ev)
 void
 multiplexer::poll_io()
 {
-  int polled = BetterSocket::gpoll(
+  int polled = BetterSocket::gPoll(
     poll_over.data(), fdcount, SCAST(int, constants::POLL_FOR));
 
   if (polled == SOCK_ERR) {

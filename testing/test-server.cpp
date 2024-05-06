@@ -11,15 +11,15 @@ int
 main()
 {
   BetterSocket::init();
-  BetterSocket::socket_hint hint(BetterSocket::ip_version::IpvAny,
-                                  BetterSocket::sock_kind::STREAM,
-                                  BetterSocket::sock_flags::USE_HOST_IP,
-                                  BetterSocket::ip_protocol::TCP);
-  BetterSocket::bsocket ListenSock(hint, PORT);
-  ListenSock.binds();
-  ListenSock.listens();
+  BetterSocket::SocketHint hint(BetterSocket::IpVersion::vAny,
+				BetterSocket::SockKind::Stream,
+				BetterSocket::SockFlags::UseHostIP,
+                                  BetterSocket::IpProtocol::TCP);
+  BetterSocket::BSocket ListenSock(hint, PORT);
+  ListenSock.bindS();
+  ListenSock.listenS();
 
-  BetterSocket::bsocket ClientSock(ListenSock.accepts());
+  BetterSocket::BSocket ClientSock(ListenSock.acceptS());
   BetterSocket::ssize iResult;
   BetterSocket::ssize iSendResult;
 
@@ -31,7 +31,7 @@ main()
     if (iResult > 0) {
       fprintf(stdout, "Bytes received: %ld\n", iResult);
       fprintf(stdout, "Contents: %s\n", recvbuf.data());
-      iSendResult = ClientSock.sends(recvbuf.data());
+      iSendResult = ClientSock.sendS(recvbuf.data());
       fprintf(stdout, "Bytes sent: %ld\n", iSendResult);
     } else if (iResult == 0)
       fprintf(stdout, "Connection closing...\n");

@@ -13,22 +13,22 @@ main(int argc, char** argv)
 {
   BetterSocket::init(); // optional: only needed on windows.
   (void)argc;
-  BetterSocket::socket_hint h(BetterSocket::ip_version::IpvAny,
-                               BetterSocket::sock_kind::STREAM,
-                               BetterSocket::sock_flags::USE_HOST_IP,
-                               BetterSocket::ip_protocol::TCP);
-  BetterSocket::bsocket sock(h, PORT, argv[1]);
-  sock.connects();
+  BetterSocket::SocketHint h(BetterSocket::IpVersion::vAny,
+                               BetterSocket::SockKind::Stream,
+			     BetterSocket::SockFlags::UseHostIP,
+                               BetterSocket::IpProtocol::TCP);
+  BetterSocket::BSocket sock(h, PORT, argv[1]);
+  sock.connectS();
 
   const char* sendbuf = "this is a test";
-  BetterSocket::ssize iResult = sock.sends(sendbuf, 0);
+  BetterSocket::ssize iResult = sock.sendS(sendbuf, 0);
   printf("Bytes sent: %ld\n", iResult);
 
   std::array<char, BUFLEN> recvbuf{ 0 };
   do {
     try {
       iResult = sock.receive(recvbuf.data(), recvbuf.size(), 0);
-    } catch (const sock_errors::APIError& e) {
+    } catch (const SockErrors::APIError& e) {
       fprintf(stderr, "%s\n", e.what());
       continue;
     };
