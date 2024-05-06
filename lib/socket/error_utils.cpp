@@ -44,6 +44,8 @@ make_error_code(errc e) noexcept
         case errc::listen_failure:
           return std::string("listen() failed");
 
+        case errc::ipfamily_not_set:
+	  return std::string("SockaddrWrapper::IsSetIPCalled is false.")
         case errc::receive_failure:
           return std::string("recv() failed");
 

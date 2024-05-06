@@ -1,5 +1,9 @@
+#include <algorithm>
+#include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
+#include <memory>
+#include <netinet/in.h>
 
 #include "socket/error_utils.hpp"
 #include "socket/generic_sockets.hpp"
@@ -32,8 +36,8 @@ AddressinfoHandle::AddressinfoHandle()
 {
 }
 
-AddressinfoHandle::AddressinfoHandle(const string hostname,
-                                     const string service,
+AddressinfoHandle::AddressinfoHandle(const string& hostname,
+                                     const string& service,
                                      const SocketHint hint)
 {
   struct addrinfo hints;
@@ -158,6 +162,78 @@ AddressinfoHandle::next()
 
 // finish AddressinfoHandle
 
+// struct SockaddrWrapper Implementation
+void
+SockaddrWrapper::m_setIP()
+{
+  wrappingOverIP = static_cast<IpVersion>(genericSockaddr.ss_family);
+  IsSetIPCalled = true;
+}
+
+const struct sockaddr_in*
+SockaddrWrapper::getPtrToV4()
+{
+  return &ipv4Sockaddr;
+}
+
+const struct sockaddr_in6*
+SockaddrWrapper::getPtrToV6()
+{
+  return &ipv6Sockaddr;
+}
+
+in_port_t
+SockaddrWrapper::getPort() const
+{
+  if (IsSetIPCalled) {
+    if (wrappingOverIP == IpVersion::v4)
+      return ipv4Sockaddr.sin_port;
+    return ipv6Sockaddr.sin6_port;
+  }
+  throw SockErrors::APIError(
+    SockErrors::errc::ipfamily_not_set,
+    std::string(
+      "Probably improperly using this wrapper since the m_setIP function is "
+      "supposed to be called by BSocket::receiveFrom() or BSocket::sendTo()."));
+}
+
+std::string
+SockaddrWrapper::getIP() const
+{
+  if (IsSetIPCalled) {
+    auto zeroToSize = [](std::string& buf, unsigned int size) {
+      buf.resize(size);
+      std::fill(buf.begin(), buf.end(), 0);
+      return size;
+    };
+
+    std::string ipBuffer;
+    if (wrappingOverIP == IpVersion::v4) {
+      auto rsize = zeroToSize(ipBuffer, INET_ADDRSTRLEN);
+      inet_ntop(ipv4Sockaddr.sin_family,
+                &ipv4Sockaddr.sin_addr,
+                ipBuffer.data(),
+                rsize);
+      return ipBuffer;
+    }
+
+    auto rsize = zeroToSize(ipBuffer, INET6_ADDRSTRLEN);
+    inet_ntop(ipv6Sockaddr.sin6_family,
+              &ipv6Sockaddr.sin6_addr,
+              ipBuffer.data(),
+              rsize);
+    return ipBuffer;
+  }
+
+  throw SockErrors::APIError(
+    SockErrors::errc::ipfamily_not_set,
+    std::string(
+      "Probably improperly using this wrapper since the m_setIP function is "
+      "supposed to be called by BSocket::receiveFrom() or BSocket::sendTo()."));
+}
+
+// finish SockaddrWrapper
+
 /******** struct BSocket ************/
 
 BSocket::BSocket()
@@ -192,8 +268,8 @@ BSocket::BSocket(BSocket&& ms)
 }
 
 BSocket::BSocket(const struct SocketHint hint,
-                 const string service,
-                 const string hostname)
+                 const string& service,
+                 const string& hostname)
   : bindsCalled(false)
   , empty(false)
   , IsListener(false)
@@ -294,10 +370,10 @@ BetterSocket::gsocket BSocket::acceptS(/*, arg2, arg3 */)
    * Otherwise do nothing and return an invalid socket. */
   if (IsListener) {
     BetterSocket::gsocket accepted = accept(rawSocket, nullptr, nullptr);
-    if (accepted == SOCK_ERR) {
+    if (accepted == SOCK_ERR)
       throw SockErrors::APIError(SockErrors::errc::accept_failure,
                                  std::string(std::strerror(errno)));
-    }
+
     return accepted;
   }
 
@@ -311,16 +387,14 @@ BSocket::bindS(bool reuseSocket)
     int enable = 1;
     if (setsockopt(
           rawSocket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) ==
-        SOCK_ERR) {
+        SOCK_ERR)
       throw SockErrors::APIError(SockErrors::errc::setsockopt_failure,
                                  std::string(std::strerror(errno)));
-    }
   }
 
-  if (bind(rawSocket, validAddr.ai_addr, validAddr.ai_addrlen) == SOCK_ERR) {
+  if (bind(rawSocket, validAddr.ai_addr, validAddr.ai_addrlen) == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::bind_failure,
                                std::string(std::strerror(errno)));
-  }
 
   bindsCalled = true;
 }
@@ -340,10 +414,10 @@ BSocket::listenS()
   /* call bindS if it has not been called before */
   if (!bindsCalled)
     bindS();
-  if (listen(rawSocket, SOMAXCONN) == SOCK_ERR) {
+  if (listen(rawSocket, SOMAXCONN) == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::listen_failure,
                                std::string(std::strerror(errno)));
-  }
+
   IsListener = true;
 }
 
@@ -351,30 +425,33 @@ BetterSocket::ssize
 BSocket::receive(void* buf, BetterSocket::size s, int flags)
 {
   BetterSocket::ssize r = recv(rawSocket, buf, (size_t)s, flags);
-  if (r == SOCK_ERR) {
+  if (r == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::receive_failure,
                                std::string(std::strerror(errno)));
-  }
+
   return r;
 }
 
 BetterSocket::ssize
 BSocket::receiveFrom(void* ibuf,
                      BetterSocket::size bufsz,
-                     struct sockaddr* senderAddr,
-                     BetterSocket::size* sndrsz,
+                     SockaddrWrapper& senderAddr,
                      int flags)
 {
-  BetterSocket::ssize s = recvfrom(rawSocket,
-                                   ibuf,
-                                   bufsz,
-                                   flags,
-                                   senderAddr,
-                                   reinterpret_cast<unsigned int*>(sndrsz));
-  if (s == SOCK_ERR) {
+  unsigned int senderSz = sizeof(*senderAddr.m_getPtrToStorage());
+  BetterSocket::ssize s =
+    recvfrom(rawSocket,
+             ibuf,
+             bufsz,
+             flags,
+             reinterpret_cast<sockaddr*>(senderAddr.m_getPtrToStorage()),
+             &senderSz);
+  if (s == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::receive_from_failure,
                                std::string(std::strerror(errno)));
-  }
+
+  senderAddr.size = senderSz;
+  senderAddr.m_setIP();
 
   return s;
 }
@@ -383,10 +460,9 @@ BetterSocket::ssize
 BSocket::sendS(std::string_view ibuf, int flags)
 {
   BetterSocket::ssize r = send(rawSocket, ibuf.data(), ibuf.length(), flags);
-  if (r == SOCK_ERR) {
+  if (r == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::send_failure,
                                std::string(std::strerror(errno)));
-  }
 
   return r;
 }
@@ -394,30 +470,33 @@ BSocket::sendS(std::string_view ibuf, int flags)
 BetterSocket::ssize
 BSocket::sendTo(void* ibuf,
                 BetterSocket::size bufsz,
-                struct sockaddr* destAddr,
-                BetterSocket::size destsz,
+                SockaddrWrapper& destAddr,
                 int flags)
 {
-  BetterSocket::ssize r = sendto(this->rawSocket,
-                                 ibuf,
-                                 bufsz,
-                                 flags,
-                                 destAddr,
-                                 static_cast<unsigned int>(destsz));
-  if (r == SOCK_ERR) {
+  unsigned int destSz = sizeof(*destAddr.m_getPtrToStorage());
+  BetterSocket::ssize r =
+    sendto(this->rawSocket,
+           ibuf,
+           bufsz,
+           flags,
+           reinterpret_cast<sockaddr*>(destAddr.m_getPtrToStorage()),
+           destSz);
+  if (r == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::sendto_failure,
                                std::string(std::strerror(errno)));
-  }
+
+  destAddr.size = destSz;
+  destAddr.m_setIP();
+
   return r;
 }
 
 void
 BSocket::shutdownS(enum BetterSocket::TransmissionEnd reason)
 {
-  if (shutdown(rawSocket, static_cast<int>(reason)) == SOCK_ERR) {
+  if (shutdown(rawSocket, static_cast<int>(reason)) == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::shutdown_failure,
                                std::string(std::strerror(errno)));
-  }
 }
 
 void

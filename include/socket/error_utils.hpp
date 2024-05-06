@@ -18,6 +18,7 @@ enum class errc
   bind_failure,
   connect_failure,
   getaddrinfo_failure,
+  ipfamily_not_set,
   listen_failure,
   receive_failure,
   receive_from_failure,
@@ -25,7 +26,6 @@ enum class errc
   sendto_failure,
   setsockopt_failure,
   shutdown_failure,
-
 };
 
 std::error_code

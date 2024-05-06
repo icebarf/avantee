@@ -2,7 +2,9 @@
 #define ICETEA_SOCKETS_H
 
 #include <iterator>
+#include <netinet/in.h>
 #include <string_view>
+#include <sys/socket.h>
 
 #include "generic_sockets.hpp"
 
@@ -70,8 +72,8 @@ public:
   struct addrinfo* infoP;
 
   AddressinfoHandle();
-  AddressinfoHandle(const std::string hostname,
-                    const std::string service,
+  AddressinfoHandle(const std::string& hostname,
+                    const std::string& service,
                     const struct SocketHint hint);
   AddressinfoHandle(const AddressinfoHandle& h);
   ~AddressinfoHandle();
@@ -112,6 +114,28 @@ public:
 
 }; // struct AddressinfoHandle
 
+// Wrapper over `sockaddr_*` structures
+// check wrappingOverIP then call either get* functions
+struct SockaddrWrapper
+{
+public:
+  IpVersion wrappingOverIP;
+  unsigned int size; // filled only when operated on by BSocket
+
+  struct sockaddr_storage* m_getPtrToStorage();
+  const struct sockaddr_in* getPtrToV4();
+  const struct sockaddr_in6* getPtrToV6();
+  in_port_t getPort() const;
+  std::string getIP() const;
+  void m_setIP();
+
+private:
+  struct sockaddr_storage genericSockaddr;
+  struct sockaddr_in ipv4Sockaddr;
+  struct sockaddr_in6 ipv6Sockaddr;
+  bool IsSetIPCalled;
+}; // struct SockaddrWrapper
+
 /* Managed class that wraps over the C API.
  * Not every function is wrapped over, only the handful ones that need
  * be used in avantee. They are as follows:
@@ -148,8 +172,8 @@ public:
   BSocket(BetterSocket::gsocket s);
   BSocket(BSocket&& ms);
   BSocket(const struct SocketHint hint,
-          const std::string service,
-          const std::string hostname = "");
+          const std::string& service,
+          const std::string& hostname = "");
 
   ~BSocket();
   bool IsEmpty() const;
@@ -179,14 +203,12 @@ public:
   BetterSocket::ssize receive(void* ibuf, BetterSocket::size s, int flags = 0);
   BetterSocket::ssize receiveFrom(void* ibuf,
                                   BetterSocket::size bufsz,
-                                  struct sockaddr* senderAddr,
-                                  BetterSocket::size* sndrsz,
+                                  SockaddrWrapper& senderAddr,
                                   int flags = 0);
   BetterSocket::ssize sendS(std::string_view buf, int flags = 0);
   BetterSocket::ssize sendTo(void* ibuf,
                              BetterSocket::size bufsz,
-                             struct sockaddr* destAddr,
-                             BetterSocket::size destsz,
+                             SockaddrWrapper& destAddr,
                              int flags = 0);
   void shutdownS(enum TransmissionEnd reason);
   void tryNext();
