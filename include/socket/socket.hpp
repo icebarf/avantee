@@ -115,22 +115,22 @@ public:
 /* Managed class that wraps over the C API.
  * Not every function is wrapped over, only the handful ones that need
  * be used in avantee. They are as follows:
- * Return Type       Identifier    Params                 Wrapping-Over
- * void              binds         bool                   bind
- * void              connects      [None]                 connect
- * void              listers       [None]                 listen
+ * Return Type            Identifier    Params                 Wrapping-Over
+ * void                   bindS         bool                   bind
+ * void                   connectS      [None]                 connect
+ * void                   listenS       [None]                 listen
  * BetterSocket::ssize    receieve      void*,                 recv
- *                                 BetterSocket::size,
- *                                 int (default)
- * BetterSocket::ssize    recieve_from  void*,                 recvfrom
- *                                 BetterSocket::size,
- *                                 struct sockaddr*
- *                                 BetterSocket::size*
- *                                 int (default)
- * BetterSocket::ssize   sends          std::string_view,      send
- *                                 int (default)
- * void             shutdowns      enum TransmissionEnd   shutdown
- * void             try_next       [None]                 [None]
+ *                                      BetterSocket::size,
+ *                                      int (default)
+ * BetterSocket::ssize    recieveFrom   void*,                 recvfrom
+ *                                      BetterSocket::size,
+ *                                      struct sockaddr*
+ *                                      BetterSocket::size*
+ *                                      int (default)
+ * BetterSocket::ssize    sendS         std::string_view,      send
+ *                                      int (default)
+ * void                   shutdownS     enum TransmissionEnd   shutdown
+ * void                   tryNext       [None]                 [None]
  */
 class BSocket
 {
