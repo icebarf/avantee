@@ -54,7 +54,7 @@ terminate()
 }
 
 int
-close_socket(gsocket s)
+closeSocket(gsocket s)
 {
 #if defined(ICY_ON_WINDOWS)
   return closesocket(s);
@@ -64,7 +64,7 @@ close_socket(gsocket s)
 }
 
 int
-gpoll(gpollfd* fds, size fdcnt, int timeout)
+gPoll(gpollfd* fds, size fdcnt, int timeout)
 {
 #if defined(ICY_ON_WINDOWS)
   return WSAPoll(fds, fdcnt, timeout);

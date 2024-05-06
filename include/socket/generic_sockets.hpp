@@ -90,11 +90,11 @@ terminate();
  * API calls
  */
 int
-close_socket(gsocket s);
+closeSocket(gsocket s);
 
 /* Wrapper over `poll()`*/
 int
-gpoll(gpollfd* fds, size fdcnt, int timeout);
+gPoll(gpollfd* fds, size fdcnt, int timeout);
 
 /* Zero out the memory in range [p+0, p+len) */
 void*

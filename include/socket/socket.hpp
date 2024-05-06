@@ -10,32 +10,32 @@ namespace BetterSocket {
 
 enum class TransmissionEnd
 {
-  NO_RECV = SHUT_RD,
-  NO_TRANS = SHUT_WR,
-  EVERYTHING = SHUT_RDWR,
+  NoRecv = SHUT_RD,
+  NoSend = SHUT_WR,
+  Everything = SHUT_RDWR,
 };
 
 /* Socket abstraction */
-enum class ip_version
+enum class IpVersion
 {
-  IPv4 = AF_INET,
-  IPv6 = AF_INET6,
-  IpvAny = AF_UNSPEC,
+  v4 = AF_INET,
+  v6 = AF_INET6,
+  vAny = AF_UNSPEC,
 };
 
-enum class sock_kind
+enum class SockKind
 {
-  STREAM = SOCK_STREAM,
-  DGRAM = SOCK_DGRAM,
+  Stream = SOCK_STREAM,
+  Datagram = SOCK_DGRAM,
 };
 
-enum class sock_flags
+enum class SockFlags
 {
-  NONE = -1,
-  USE_HOST_IP = AI_PASSIVE,
+  None = -1,
+  UseHostIP = AI_PASSIVE,
 };
 
-enum class ip_protocol
+enum class IpProtocol
 {
   UDP = IPPROTO_UDP,
   TCP = IPPROTO_TCP,
@@ -44,37 +44,37 @@ enum class ip_protocol
 /* structure to be used for the construction of
  * `bsocket` class
  */
-struct socket_hint
+struct SocketHint
 {
-  enum ip_version hostip_version;
-  enum sock_kind socket_kind;
-  enum sock_flags flags;
-  enum ip_protocol ipproto;
-  socket_hint(const ip_version v,
-              const sock_kind k,
-              const sock_flags f,
-              const ip_protocol ipproto);
+  enum IpVersion hostIpVersion;
+  enum SockKind socket_kind;
+  enum SockFlags flags;
+  enum IpProtocol ipproto;
+  SocketHint(const IpVersion v,
+             const SockKind k,
+             const SockFlags f,
+             const IpProtocol ipproto);
 };
 
 /* wrapper around `struct addrinfo` with the following features:
  * - Iterator implementation to loop over the list
  * - Equality Comparison operators for Iterator compatibilty
  */
-struct addressinfo_handle
+struct AddressinfoHandle
 {
 private:
-  struct addrinfo* begin_p;
-  struct addrinfo* end_p;
+  struct addrinfo* beginP;
+  struct addrinfo* endP;
 
 public:
-  struct addrinfo* info;
+  struct addrinfo* infoP;
 
-  addressinfo_handle();
-  addressinfo_handle(const std::string hostname,
-                     const std::string service,
-                     const struct socket_hint hint);
-  addressinfo_handle(const addressinfo_handle& h);
-  ~addressinfo_handle();
+  AddressinfoHandle();
+  AddressinfoHandle(const std::string hostname,
+                    const std::string service,
+                    const struct SocketHint hint);
+  AddressinfoHandle(const AddressinfoHandle& h);
+  ~AddressinfoHandle();
 
   struct Iterator
   {
@@ -96,21 +96,21 @@ public:
     friend bool operator!=(const Iterator& lhs, const Iterator& rhs);
 
   private:
-    pointer addrinfo_ptr;
+    pointer addrinfoPtr;
   }; // struct Iterator
 
   Iterator begin();
   Iterator end();
 
   /* only make sure that the list begin, end pointers are the same*/
-  friend bool operator==(const addressinfo_handle& lhs,
-                         const addressinfo_handle& rhs);
-  friend bool operator!=(const addressinfo_handle& lhs,
-                         const addressinfo_handle& rhs);
+  friend bool operator==(const AddressinfoHandle& lhs,
+                         const AddressinfoHandle& rhs);
+  friend bool operator!=(const AddressinfoHandle& lhs,
+                         const AddressinfoHandle& rhs);
 
   void next();
 
-}; // struct addressinfo_handle
+}; // struct AddressinfoHandle
 
 /* Managed class that wraps over the C API.
  * Not every function is wrapped over, only the handful ones that need
@@ -132,34 +132,34 @@ public:
  * void             shutdowns      enum TransmissionEnd   shutdown
  * void             try_next       [None]                 [None]
  */
-class bsocket
+class BSocket
 {
-  bool binds_called{ false };
+  bool bindsCalled{ false };
   bool empty{ true };
-  bool is_listener{ false };
-  addressinfo_handle addressinfolist = {};
+  bool IsListener{ false };
+  AddressinfoHandle addressinfoList = {};
 
-  void init_raw_socket(struct addrinfo* a);
+  void initRawSocket(struct addrinfo* a);
 
 public:
-  struct addrinfo valid_addr = {};
-  BetterSocket::gsocket raw_socket{ BAD_SOCKET };
-  bsocket();
-  bsocket(BetterSocket::gsocket s);
-  bsocket(bsocket&& ms);
-  bsocket(const struct socket_hint hint,
-                 const std::string service,
-                 const std::string hostname = "");
+  struct addrinfo validAddr = {};
+  BetterSocket::gsocket rawSocket;
+  BSocket();
+  BSocket(BetterSocket::gsocket s);
+  BSocket(BSocket&& ms);
+  BSocket(const struct SocketHint hint,
+          const std::string service,
+          const std::string hostname = "");
 
-  ~bsocket();
-  bool is_empty() const;
-  BetterSocket::gsocket underlying_socket() const;
-  friend bool operator==(const int& lhs, const bsocket& rhs);
-  friend bool operator!=(const int& lhs, const bsocket& rhs);
-  friend bool operator==(const bsocket& lhs, const int& rhs);
-  friend bool operator!=(const bsocket& lhs, const int& rhs);
-  friend bool operator==(const bsocket& lhs, const bsocket& rhs);
-  friend bool operator!=(const bsocket& lhs, const bsocket& rhs);
+  ~BSocket();
+  bool IsEmpty() const;
+  BetterSocket::gsocket underlyingSocket() const;
+  friend bool operator==(const int& lhs, const BSocket& rhs);
+  friend bool operator!=(const int& lhs, const BSocket& rhs);
+  friend bool operator==(const BSocket& lhs, const int& rhs);
+  friend bool operator!=(const BSocket& lhs, const int& rhs);
+  friend bool operator==(const BSocket& lhs, const BSocket& rhs);
+  friend bool operator!=(const BSocket& lhs, const BSocket& rhs);
 
   // `man 2 accept` takes 3 arguments, two of
   // which will contain relevant information
@@ -169,135 +169,136 @@ public:
   // NULL those arguments by defualt. As soon
   // as I have a proper thought out solution, I
   // shall implement it.
-  [[nodiscard("Accepted socket must be used.")]] BetterSocket::gsocket accepts();
-  void binds(bool reuse_socket = true);
-  void connects();
-  void listens(); // This will call binds() for you. This is because normally
+  [[nodiscard("Accepted socket must be used.")]] BetterSocket::gsocket
+  acceptS();
+  void bindS(bool reuseSocket = true);
+  void connectS();
+  void listenS(); // This will call binds() for you. This is because normally
                   // the accept()'ing socket needs to be "bound" to some socket
                   // addr.
   BetterSocket::ssize receive(void* ibuf, BetterSocket::size s, int flags = 0);
-  BetterSocket::ssize receive_from(void* ibuf,
-                              BetterSocket::size bufsz,
-                              struct sockaddr* sender_addr,
-                              BetterSocket::size* sndrsz,
-                              int flags = 0);
-  BetterSocket::ssize sends(std::string_view buf, int flags = 0);
-  BetterSocket::ssize send_to(void* ibuf,
-			 BetterSocket::size bufsz,
-			 struct sockaddr* dest_addr,
-			 BetterSocket::size destsz,
-			 int flags = 0);
-  void shutdowns(enum TransmissionEnd reason);
-  void try_next();
+  BetterSocket::ssize receiveFrom(void* ibuf,
+                                  BetterSocket::size bufsz,
+                                  struct sockaddr* senderAddr,
+                                  BetterSocket::size* sndrsz,
+                                  int flags = 0);
+  BetterSocket::ssize sendS(std::string_view buf, int flags = 0);
+  BetterSocket::ssize sendTo(void* ibuf,
+                             BetterSocket::size bufsz,
+                             struct sockaddr* destAddr,
+                             BetterSocket::size destsz,
+                             int flags = 0);
+  void shutdownS(enum TransmissionEnd reason);
+  void tryNext();
 
-}; // class bsocket
+}; // class BSocket
 
 /* Abstraction for fd_set */
 
-enum class fd_type
+enum class FdType
 {
-  READ,
-  WRITE,
-  EXCEPT,
+  Read,
+  Write,
+  Exception,
 };
 
-template<fd_type f>
-struct fdset_wrapper
+template<FdType f>
+struct FdsetWrapper
 {
   fd_set set;
-  fd_type type;
+  FdType type;
 
-  fdset_wrapper();
-  fdset_wrapper(fd_set s);
-  fdset_wrapper(fdset_wrapper& s);
-  fdset_wrapper(fdset_wrapper&& s);
+  FdsetWrapper();
+  FdsetWrapper(fd_set s);
+  FdsetWrapper(FdsetWrapper& s);
+  FdsetWrapper(FdsetWrapper&& s);
+
   void append(BetterSocket::gsocket s);
+  void append(BSocket& s);
+  void emptyOut();
+  int isSet(BetterSocket::gsocket s);
+  int isSet(BSocket& s);
 
-  void append(bsocket& s);
-  void empty_out();
-  int isset(BetterSocket::gsocket s);
-  int isset(bsocket& s);
-
-  fdset_wrapper& operator=(fdset_wrapper& rhs);
+  FdsetWrapper& operator=(FdsetWrapper& rhs);
 };
 
 /* Implementation of fd_set wrapper */
 
-template<BetterSocket::fd_type f>
-inline BetterSocket::fdset_wrapper<f>::fdset_wrapper()
+template<BetterSocket::FdType f>
+inline BetterSocket::FdsetWrapper<f>::FdsetWrapper()
   : set{}
   , type{ f }
 {
   FD_ZERO(&set);
 }
 
-template<BetterSocket::fd_type f>
-inline BetterSocket::fdset_wrapper<f>::fdset_wrapper(fd_set s)
+template<BetterSocket::FdType f>
+inline BetterSocket::FdsetWrapper<f>::FdsetWrapper(fd_set s)
   : set{ s }
   , type{ f }
 {
 }
 
-template<BetterSocket::fd_type f>
-inline BetterSocket::fdset_wrapper<f>::fdset_wrapper(fdset_wrapper<f>& s)
+template<BetterSocket::FdType f>
+inline BetterSocket::FdsetWrapper<f>::FdsetWrapper(FdsetWrapper<f>& s)
   : set{ s.set }
   , type{ s.type }
 {
 }
 
-template<BetterSocket::fd_type f>
-inline BetterSocket::fdset_wrapper<f>::fdset_wrapper(fdset_wrapper<f>&& s)
+template<BetterSocket::FdType f>
+inline BetterSocket::FdsetWrapper<f>::FdsetWrapper(FdsetWrapper<f>&& s)
   : set{ s.set }
   , type{ s.type }
 {
   s.set = nullptr;
-  s.type = fd_type::EXCEPT;
-  this->empty_out();
+  s.type = FdType::Exception;
+  this->emptyOut();
 }
 
-template<BetterSocket::fd_type f>
-void inline BetterSocket::fdset_wrapper<f>::append(BetterSocket::gsocket s)
+template<BetterSocket::FdType f>
+void inline BetterSocket::FdsetWrapper<f>::append(BetterSocket::gsocket s)
 {
   FD_SET(s, &set);
 }
 
-template<BetterSocket::fd_type f>
-void inline BetterSocket::fdset_wrapper<f>::append(bsocket& s)
+template<BetterSocket::FdType f>
+void inline BetterSocket::FdsetWrapper<f>::append(BSocket& s)
 {
-  FD_SET(s.underlying_socket(), &set);
+  FD_SET(s.underlyingSocket(), &set);
 }
 
-template<BetterSocket::fd_type f>
+template<BetterSocket::FdType f>
 inline void
-BetterSocket::fdset_wrapper<f>::empty_out()
+BetterSocket::FdsetWrapper<f>::emptyOut()
 {
   FD_ZERO(&set);
 }
 
-template<BetterSocket::fd_type f>
+template<BetterSocket::FdType f>
 inline int
-BetterSocket::fdset_wrapper<f>::isset(BetterSocket::gsocket s)
+BetterSocket::FdsetWrapper<f>::isSet(BetterSocket::gsocket s)
 {
   return FD_ISSET(s, &set);
 }
 
-template<BetterSocket::fd_type f>
+template<BetterSocket::FdType f>
 inline int
-BetterSocket::fdset_wrapper<f>::isset(BetterSocket::bsocket& s)
+BetterSocket::FdsetWrapper<f>::isSet(BetterSocket::BSocket& s)
 {
-  return FD_ISSET(s.underlying_socket(), &set);
+  return FD_ISSET(s.underlyingSocket(), &set);
 }
 
-template<fd_type f>
-inline fdset_wrapper<f>&
-fdset_wrapper<f>::operator=(fdset_wrapper<f>& rhs)
+template<FdType f>
+inline FdsetWrapper<f>&
+FdsetWrapper<f>::operator=(FdsetWrapper<f>& rhs)
 {
   this->set = rhs.set;
   this->type = rhs.type;
   return *this;
 }
 
-// finish fdset_wrapper
+// finish FdsetWrapper
 
 } // namespace BetterSocket
 

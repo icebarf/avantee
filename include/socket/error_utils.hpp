@@ -5,7 +5,7 @@
 #include <string>
 #include <system_error>
 
-namespace sock_errors {
+namespace SockErrors {
 /* we want the error code to be truthy
  * eg: if (error) then_do_whatever();
  */
@@ -27,7 +27,6 @@ enum class errc
   shutdown_failure,
 
 };
-
 
 std::error_code
 make_error_code(errc e) noexcept;
@@ -75,7 +74,6 @@ public:
   const char* what() const noexcept override;
   errc whatErrc() const noexcept;
 };
-
 
 }
 
