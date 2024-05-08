@@ -2,8 +2,6 @@
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
-#include <memory>
-#include <netinet/in.h>
 
 #include "socket/error_utils.hpp"
 #include "socket/generic_sockets.hpp"
@@ -163,11 +161,61 @@ AddressinfoHandle::next()
 // finish AddressinfoHandle
 
 // struct SockaddrWrapper Implementation
-void
-SockaddrWrapper::m_setIP()
+
+SockaddrWrapper::SockaddrWrapper()
+  : wrappingOverIP(IpVersion::vAny),
+    sockaddrsz(0),
+    genericSockaddr(),
+    ipv4Sockaddr(),
+    ipv6Sockaddr(),
+    IsSetIPCalled(false)
+{  
+}
+
+SockaddrWrapper::SockaddrWrapper(sockaddr s, socklen_t size)
+  : sockaddrsz(size)
+  , genericSockaddr(*(reinterpret_cast<sockaddr_storage*>(&s)))
 {
-  wrappingOverIP = static_cast<IpVersion>(genericSockaddr.ss_family);
-  IsSetIPCalled = true;
+  m_setIP();
+}
+
+SockaddrWrapper::SockaddrWrapper(sockaddr_in s4, socklen_t size)
+  : wrappingOverIP(IpVersion::v4)
+  , sockaddrsz(size)
+  , ipv4Sockaddr(s4)
+  , IsSetIPCalled(true)
+{
+}
+
+SockaddrWrapper::SockaddrWrapper(sockaddr_in6 s6, socklen_t size)
+  : wrappingOverIP(IpVersion::v6)
+  , sockaddrsz(size)
+  , ipv6Sockaddr(s6)
+  , IsSetIPCalled(true)
+{
+}
+
+SockaddrWrapper::SockaddrWrapper(sockaddr_in& s4, socklen_t size)
+  : wrappingOverIP(IpVersion::v4)
+  , sockaddrsz(size)
+  , ipv4Sockaddr(s4)
+  , IsSetIPCalled(true)
+{
+}
+
+SockaddrWrapper::SockaddrWrapper(sockaddr_in6& s6, socklen_t size)
+  : wrappingOverIP(IpVersion::v6)
+  , sockaddrsz(size)
+  , ipv6Sockaddr(s6)
+  , IsSetIPCalled(true)
+{
+}
+
+SockaddrWrapper::SockaddrWrapper(sockaddr_storage& gs, socklen_t size)
+  : sockaddrsz(size)
+  , genericSockaddr(gs)
+{
+  m_setIP();
 }
 
 const struct sockaddr_in*
@@ -230,6 +278,13 @@ SockaddrWrapper::getIP() const
     std::string(
       "Probably improperly using this wrapper since the m_setIP function is "
       "supposed to be called by BSocket::receiveFrom() or BSocket::sendTo()."));
+}
+
+void
+SockaddrWrapper::m_setIP()
+{
+  wrappingOverIP = static_cast<IpVersion>(genericSockaddr.ss_family);
+  IsSetIPCalled = true;
 }
 
 // finish SockaddrWrapper
@@ -363,6 +418,41 @@ operator!=(const BSocket& lhs, const BSocket& rhs)
   return !(lhs == rhs); // use the previously defined equality
 }
 
+sockaddr
+BSocket::getsockaddr() const
+{
+  return *validAddr.ai_addr;
+}
+
+SockaddrWrapper BSocket::getsockaddrInWrapper() const
+{
+  return SockaddrWrapper(*validAddr.ai_addr);
+}
+
+void
+BSocket::tryNext()
+{
+  BetterSocket::closeSocket(rawSocket);
+
+  try {
+    addressinfoList.next();
+  } catch (const SockErrors::APIError& e) {
+    throw;
+  }
+
+  validAddr = *addressinfoList.infoP;
+  initRawSocket(addressinfoList.infoP);
+  if (rawSocket == BAD_SOCKET) {
+    throw SockErrors::APIError(
+      SockErrors::errc::bad_socket,
+      "initialising socket failed while trying the next 'struct addrinfo'");
+  }
+  bindsCalled = false;
+  empty = false;
+  IsListener = false;
+}
+
+/* -- socket api -- */
 /* implement arg2 and arg3 at a later date, more infoP in header file. */
 BetterSocket::gsocket BSocket::acceptS(/*, arg2, arg3 */)
 {
@@ -450,7 +540,7 @@ BSocket::receiveFrom(void* ibuf,
     throw SockErrors::APIError(SockErrors::errc::receive_from_failure,
                                std::string(std::strerror(errno)));
 
-  senderAddr.size = senderSz;
+  senderAddr.sockaddrsz = senderSz;
   senderAddr.m_setIP();
 
   return s;
@@ -473,7 +563,7 @@ BSocket::sendTo(void* ibuf,
                 SockaddrWrapper& destAddr,
                 int flags)
 {
-  unsigned int destSz = sizeof(*destAddr.m_getPtrToStorage());
+  unsigned int destSz = destAddr.sockaddrsz;
   BetterSocket::ssize r =
     sendto(this->rawSocket,
            ibuf,
@@ -484,8 +574,6 @@ BSocket::sendTo(void* ibuf,
   if (r == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::sendto_failure,
                                std::string(std::strerror(errno)));
-
-  destAddr.size = destSz;
   destAddr.m_setIP();
 
   return r;
@@ -497,29 +585,6 @@ BSocket::shutdownS(enum BetterSocket::TransmissionEnd reason)
   if (shutdown(rawSocket, static_cast<int>(reason)) == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::shutdown_failure,
                                std::string(std::strerror(errno)));
-}
-
-void
-BSocket::tryNext()
-{
-  BetterSocket::closeSocket(rawSocket);
-
-  try {
-    addressinfoList.next();
-  } catch (const SockErrors::APIError& e) {
-    throw;
-  }
-
-  validAddr = *addressinfoList.infoP;
-  initRawSocket(addressinfoList.infoP);
-  if (rawSocket == BAD_SOCKET) {
-    throw SockErrors::APIError(
-      SockErrors::errc::bad_socket,
-      "initialising socket failed while trying the next 'struct addrinfo'");
-  }
-  bindsCalled = false;
-  empty = false;
-  IsListener = false;
 }
 // finish BSocket
 } // namespace BetterSocket

@@ -120,8 +120,16 @@ struct SockaddrWrapper
 {
 public:
   IpVersion wrappingOverIP;
-  unsigned int size; // filled only when operated on by BSocket
+  unsigned int sockaddrsz;
 
+  SockaddrWrapper();
+  SockaddrWrapper(sockaddr s, socklen_t size = sizeof(sockaddr));
+  SockaddrWrapper(sockaddr_in s4, socklen_t size = sizeof(sockaddr_in));
+  SockaddrWrapper(sockaddr_in6 s6, socklen_t size = sizeof(sockaddr_in6));
+  SockaddrWrapper(sockaddr_in& s4, socklen_t size = sizeof(sockaddr_in));
+  SockaddrWrapper(sockaddr_in6& s6, socklen_t size = sizeof(sockaddr_in6));
+  SockaddrWrapper(sockaddr_storage& gs, socklen_t size = sizeof(sockaddr_storage));
+  
   struct sockaddr_storage* m_getPtrToStorage();
   const struct sockaddr_in* getPtrToV4();
   const struct sockaddr_in6* getPtrToV6();
@@ -184,7 +192,12 @@ public:
   friend bool operator!=(const BSocket& lhs, const int& rhs);
   friend bool operator==(const BSocket& lhs, const BSocket& rhs);
   friend bool operator!=(const BSocket& lhs, const BSocket& rhs);
+  sockaddr getsockaddr() const;
+  SockaddrWrapper getsockaddrInWrapper() const;
+  void tryNext();
 
+  /* -- socket api -- */
+  
   // `man 2 accept` takes 3 arguments, two of
   // which will contain relevant information
   // about the peer connection. Currently I
@@ -211,7 +224,6 @@ public:
                              SockaddrWrapper& destAddr,
                              int flags = 0);
   void shutdownS(enum TransmissionEnd reason);
-  void tryNext();
 
 }; // class BSocket
 
