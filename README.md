@@ -1,8 +1,6 @@
 # Project Avantee
 
 Avantee is an implementation of a TFTP client-server suite.
-This is an exercise to work with C++, whlie also learning about socket 
-programming.
 
 ## Resources Used
 
