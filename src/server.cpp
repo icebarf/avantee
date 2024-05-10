@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <string>
+#include <utility>
 
 #include "multiplexer.hpp"
 #include "socket/socket.hpp"
@@ -19,37 +20,40 @@ enum class Opcodes : int16_t
   ERROR,
 };
 
-enum class constants
+enum class Constants : unsigned long
 {
   MaxDataLen = 512,
+  MaxFilenameLen = 255,
+  MaxModeStringLen = sizeof("netascii"),
+  MaxErrorMsgLen = 255,
 };
 
 struct request_packet
 {
   int16_t opcode;
-  std::string filename;
-  std::string mode;
-};
+  char filename[std::to_underlying(Constants::MaxFilenameLen)];
+  char mode[std::to_underlying(Constants::MaxModeStringLen)];
+} __attribute((packed));
 
 struct data_packet
 {
   int16_t opcode;
   int16_t block;
-  std::array<std::byte, SCAST(unsigned long, constants::MaxDataLen)> data;
-};
+  std::array<std::byte, std::to_underlying(Constants::MaxDataLen)> data;
+} __attribute((packed));
 
 struct ack_packet
 {
   int16_t opcode;
   int16_t block;
-};
+} __attribute((packed));
 
 struct error_packet
 {
   int16_t opcode;
   int16_t error_code;
-  std::string error_msg;
-};
+  char error_msg[std::to_underlying(Constants::MaxErrorMsgLen)];
+} __attribute((packed));
 
 consteval BetterSocket::size
 largest_packet_size()
@@ -66,6 +70,11 @@ largest_packet_size()
       return e1 < e2;
     });
 }
+
+struct __attribute((packed)) GenericPacket {
+  int16_t opcode;
+  std::byte __padding[largest_packet_size() - sizeof(opcode)]; 
+};
 
 int
 main()
