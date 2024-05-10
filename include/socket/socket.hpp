@@ -128,8 +128,9 @@ public:
   SockaddrWrapper(sockaddr_in6 s6, socklen_t size = sizeof(sockaddr_in6));
   SockaddrWrapper(sockaddr_in& s4, socklen_t size = sizeof(sockaddr_in));
   SockaddrWrapper(sockaddr_in6& s6, socklen_t size = sizeof(sockaddr_in6));
-  SockaddrWrapper(sockaddr_storage& gs, socklen_t size = sizeof(sockaddr_storage));
-  
+  SockaddrWrapper(sockaddr_storage& gs,
+                  socklen_t size = sizeof(sockaddr_storage));
+
   struct sockaddr_storage* m_getPtrToStorage();
   const struct sockaddr_in* getPtrToV4();
   const struct sockaddr_in6* getPtrToV6();
@@ -175,9 +176,9 @@ class BSocket
 
 public:
   struct addrinfo validAddr = {};
-  BetterSocket::gsocket rawSocket;
+  BetterSocket::GSocket rawSocket;
   BSocket();
-  BSocket(BetterSocket::gsocket s);
+  BSocket(BetterSocket::GSocket s);
   BSocket(BSocket&& ms);
   BSocket(const struct SocketHint hint,
           const std::string& service,
@@ -185,7 +186,7 @@ public:
 
   ~BSocket();
   bool IsEmpty() const;
-  BetterSocket::gsocket underlyingSocket() const;
+  BetterSocket::GSocket underlyingSocket() const;
   friend bool operator==(const int& lhs, const BSocket& rhs);
   friend bool operator!=(const int& lhs, const BSocket& rhs);
   friend bool operator==(const BSocket& lhs, const int& rhs);
@@ -197,7 +198,7 @@ public:
   void tryNext();
 
   /* -- socket api -- */
-  
+
   // `man 2 accept` takes 3 arguments, two of
   // which will contain relevant information
   // about the peer connection. Currently I
@@ -206,21 +207,21 @@ public:
   // NULL those arguments by defualt. As soon
   // as I have a proper thought out solution, I
   // shall implement it.
-  [[nodiscard("Accepted socket must be used.")]] BetterSocket::gsocket
+  [[nodiscard("Accepted socket must be used.")]] BetterSocket::GSocket
   acceptS();
   void bindS(bool reuseSocket = true);
   void connectS();
   void listenS(); // This will call binds() for you. This is because normally
                   // the accept()'ing socket needs to be "bound" to some socket
                   // addr.
-  BetterSocket::ssize receive(void* ibuf, BetterSocket::size s, int flags = 0);
-  BetterSocket::ssize receiveFrom(void* ibuf,
-                                  BetterSocket::size bufsz,
+  BetterSocket::SSize receive(void* ibuf, BetterSocket::Size s, int flags = 0);
+  BetterSocket::SSize receiveFrom(void* ibuf,
+                                  BetterSocket::Size bufsz,
                                   SockaddrWrapper& senderAddr,
                                   int flags = 0);
-  BetterSocket::ssize sendS(std::string_view buf, int flags = 0);
-  BetterSocket::ssize sendTo(void* ibuf,
-                             BetterSocket::size bufsz,
+  BetterSocket::SSize sendS(std::string_view buf, int flags = 0);
+  BetterSocket::SSize sendTo(void* ibuf,
+                             BetterSocket::Size bufsz,
                              SockaddrWrapper& destAddr,
                              int flags = 0);
   void shutdownS(enum TransmissionEnd reason);
@@ -247,10 +248,10 @@ struct FdsetWrapper
   FdsetWrapper(FdsetWrapper& s);
   FdsetWrapper(FdsetWrapper&& s);
 
-  void append(BetterSocket::gsocket s);
+  void append(BetterSocket::GSocket s);
   void append(BSocket& s);
   void emptyOut();
-  int isSet(BetterSocket::gsocket s);
+  int isSet(BetterSocket::GSocket s);
   int isSet(BSocket& s);
 
   FdsetWrapper& operator=(FdsetWrapper& rhs);
@@ -291,7 +292,7 @@ inline BetterSocket::FdsetWrapper<f>::FdsetWrapper(FdsetWrapper<f>&& s)
 }
 
 template<BetterSocket::FdType f>
-void inline BetterSocket::FdsetWrapper<f>::append(BetterSocket::gsocket s)
+void inline BetterSocket::FdsetWrapper<f>::append(BetterSocket::GSocket s)
 {
   FD_SET(s, &set);
 }
@@ -311,7 +312,7 @@ BetterSocket::FdsetWrapper<f>::emptyOut()
 
 template<BetterSocket::FdType f>
 inline int
-BetterSocket::FdsetWrapper<f>::isSet(BetterSocket::gsocket s)
+BetterSocket::FdsetWrapper<f>::isSet(BetterSocket::GSocket s)
 {
   return FD_ISSET(s, &set);
 }

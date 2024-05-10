@@ -30,10 +30,10 @@ namespace icysock {
 #define SHUT_RDWR SD_BOTH
 
 /* introduce alias types on windows */
-using sockdata = WSADATA;
-using gsocket = SOCKET;
+using Sockdata = WSADATA;
+using GSocket = SOCKET;
 
-using gpollfd = WSAPOLLFD;
+using GPollfd = WSAPOLLFD;
 }
 
 #else
@@ -52,10 +52,10 @@ namespace BetterSocket {
 #define SOCK_ERR -1
 
 /* introduce alias types on other platform */
-using sockdata = int;
-using gsocket = int;
+using Sockdata = int;
+using GSocket = int;
 
-using gpollfd = struct pollfd;
+using GPollfd = struct pollfd;
 }
 
 #endif
@@ -65,8 +65,8 @@ using gpollfd = struct pollfd;
 namespace BetterSocket {
 
 /* Signed return type for size */
-using ssize = std::intmax_t;
-using size = std::uintmax_t;
+using SSize = std::intmax_t;
+using Size = std::uintmax_t;
 
 /* initialise the sockets library
  * this is only needed on windows but this should be called
@@ -74,7 +74,7 @@ using size = std::uintmax_t;
  * additional structures and variables not part of the windows
  * API
  */
-[[maybe_unused]] sockdata
+[[maybe_unused]] Sockdata
 init();
 
 /* terminate the sockets library
@@ -90,15 +90,15 @@ terminate();
  * API calls
  */
 int
-closeSocket(gsocket s);
+closeSocket(GSocket s);
 
 /* Wrapper over `poll()`*/
 int
-gPoll(gpollfd* fds, size fdcnt, int timeout);
+gPoll(GPollfd* fds, Size fdcnt, int timeout);
 
 /* Zero out the memory in range [p+0, p+len) */
 void*
-zero(void* p, size len);
+zero(void* p, Size len);
 
 }
 #endif

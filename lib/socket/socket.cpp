@@ -163,13 +163,13 @@ AddressinfoHandle::next()
 // struct SockaddrWrapper Implementation
 
 SockaddrWrapper::SockaddrWrapper()
-  : wrappingOverIP(IpVersion::vAny),
-    sockaddrsz(0),
-    genericSockaddr(),
-    ipv4Sockaddr(),
-    ipv6Sockaddr(),
-    IsSetIPCalled(false)
-{  
+  : wrappingOverIP(IpVersion::vAny)
+  , sockaddrsz(0)
+  , genericSockaddr()
+  , ipv4Sockaddr()
+  , ipv6Sockaddr()
+  , IsSetIPCalled(false)
+{
 }
 
 SockaddrWrapper::SockaddrWrapper(sockaddr s, socklen_t size)
@@ -284,7 +284,20 @@ void
 SockaddrWrapper::m_setIP()
 {
   wrappingOverIP = static_cast<IpVersion>(genericSockaddr.ss_family);
+  if ((wrappingOverIP != IpVersion::v4) and (wrappingOverIP != IpVersion::v6))
+    throw SockErrors::APIError(SockErrors::errc::ipfamily_not_set,
+                               strerror(errno));
+  if (wrappingOverIP == IpVersion::v4)
+    this->ipv4Sockaddr = *reinterpret_cast<sockaddr_in*>(
+      &genericSockaddr); // kekw wtf is this garbage c++
+  this->ipv6Sockaddr = *reinterpret_cast<sockaddr_in6*>(&genericSockaddr);
   IsSetIPCalled = true;
+}
+
+sockaddr_storage*
+SockaddrWrapper::m_getPtrToStorage()
+{
+  return &this->genericSockaddr;
 }
 
 // finish SockaddrWrapper
@@ -300,7 +313,7 @@ BSocket::BSocket()
 {
 }
 
-BSocket::BSocket(BetterSocket::gsocket s)
+BSocket::BSocket(BetterSocket::GSocket s)
   : bindsCalled(false)
   , empty(false)
   , IsListener(false)
@@ -375,7 +388,7 @@ BSocket::IsEmpty() const
   return empty;
 }
 
-gsocket
+GSocket
 BSocket::underlyingSocket() const
 {
   return rawSocket;
@@ -424,7 +437,8 @@ BSocket::getsockaddr() const
   return *validAddr.ai_addr;
 }
 
-SockaddrWrapper BSocket::getsockaddrInWrapper() const
+SockaddrWrapper
+BSocket::getsockaddrInWrapper() const
 {
   return SockaddrWrapper(*validAddr.ai_addr);
 }
@@ -454,12 +468,12 @@ BSocket::tryNext()
 
 /* -- socket api -- */
 /* implement arg2 and arg3 at a later date, more infoP in header file. */
-BetterSocket::gsocket BSocket::acceptS(/*, arg2, arg3 */)
+BetterSocket::GSocket BSocket::acceptS(/*, arg2, arg3 */)
 {
   /* Only call accept() on the socket if listen() has been called before.
    * Otherwise do nothing and return an invalid socket. */
   if (IsListener) {
-    BetterSocket::gsocket accepted = accept(rawSocket, nullptr, nullptr);
+    BetterSocket::GSocket accepted = accept(rawSocket, nullptr, nullptr);
     if (accepted == SOCK_ERR)
       throw SockErrors::APIError(SockErrors::errc::accept_failure,
                                  std::string(std::strerror(errno)));
@@ -511,10 +525,10 @@ BSocket::listenS()
   IsListener = true;
 }
 
-BetterSocket::ssize
-BSocket::receive(void* buf, BetterSocket::size s, int flags)
+BetterSocket::SSize
+BSocket::receive(void* buf, BetterSocket::Size s, int flags)
 {
-  BetterSocket::ssize r = recv(rawSocket, buf, (size_t)s, flags);
+  BetterSocket::SSize r = recv(rawSocket, buf, (size_t)s, flags);
   if (r == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::receive_failure,
                                std::string(std::strerror(errno)));
@@ -522,14 +536,14 @@ BSocket::receive(void* buf, BetterSocket::size s, int flags)
   return r;
 }
 
-BetterSocket::ssize
+BetterSocket::SSize
 BSocket::receiveFrom(void* ibuf,
-                     BetterSocket::size bufsz,
+                     BetterSocket::Size bufsz,
                      SockaddrWrapper& senderAddr,
                      int flags)
 {
   unsigned int senderSz = sizeof(*senderAddr.m_getPtrToStorage());
-  BetterSocket::ssize s =
+  BetterSocket::SSize s =
     recvfrom(rawSocket,
              ibuf,
              bufsz,
@@ -546,10 +560,10 @@ BSocket::receiveFrom(void* ibuf,
   return s;
 }
 
-BetterSocket::ssize
+BetterSocket::SSize
 BSocket::sendS(std::string_view ibuf, int flags)
 {
-  BetterSocket::ssize r = send(rawSocket, ibuf.data(), ibuf.length(), flags);
+  BetterSocket::SSize r = send(rawSocket, ibuf.data(), ibuf.length(), flags);
   if (r == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::send_failure,
                                std::string(std::strerror(errno)));
@@ -557,14 +571,14 @@ BSocket::sendS(std::string_view ibuf, int flags)
   return r;
 }
 
-BetterSocket::ssize
+BetterSocket::SSize
 BSocket::sendTo(void* ibuf,
-                BetterSocket::size bufsz,
+                BetterSocket::Size bufsz,
                 SockaddrWrapper& destAddr,
                 int flags)
 {
   unsigned int destSz = destAddr.sockaddrsz;
-  BetterSocket::ssize r =
+  BetterSocket::SSize r =
     sendto(this->rawSocket,
            ibuf,
            bufsz,

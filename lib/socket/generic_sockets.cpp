@@ -5,7 +5,7 @@
 
 namespace BetterSocket {
 
-sockdata
+Sockdata
 init()
 {
   int result = 0;
@@ -54,7 +54,7 @@ terminate()
 }
 
 int
-closeSocket(gsocket s)
+closeSocket(GSocket s)
 {
 #if defined(ICY_ON_WINDOWS)
   return closesocket(s);
@@ -64,7 +64,7 @@ closeSocket(gsocket s)
 }
 
 int
-gPoll(gpollfd* fds, size fdcnt, int timeout)
+gPoll(GPollfd* fds, Size fdcnt, int timeout)
 {
 #if defined(ICY_ON_WINDOWS)
   return WSAPoll(fds, fdcnt, timeout);
@@ -74,7 +74,7 @@ gPoll(gpollfd* fds, size fdcnt, int timeout)
 }
 
 void*
-zero(void* p, size len)
+zero(void* p, Size len)
 {
 #if defined(ICY_ON_WINDOWS)
   ZeroMemory(p, len);
