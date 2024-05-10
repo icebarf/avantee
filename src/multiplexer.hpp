@@ -8,7 +8,7 @@
 
 #define TYPEOF(Value) __decltype(Value)
 
-struct multiplexer
+struct Multiplexer
 {
 
   enum class constants
@@ -17,48 +17,46 @@ struct multiplexer
     POLL_FOR = 0,
   };
 
-  BetterSocket::size fdcount;
-  std::array<BetterSocket::gpollfd,
+  BetterSocket::Size fdcount;
+  std::array<BetterSocket::GPollfd,
              std::to_underlying(constants::MAX_SERVER_CONNECTIONS)>
     poll_over;
 
-  enum class events : TYPEOF(TYPEOF(poll_over)::value_type::events){
+  enum class Events : TYPEOF(TYPEOF(poll_over)::value_type::events){
     INPUT = POLLIN,
     OUTPUT = POLLOUT,
     ERROR = POLLERR,
     INVALID = POLLNVAL,
   };
 
-  multiplexer();
+  Multiplexer();
 
   /* add socket to be polled over */
-  void watch(BetterSocket::gsocket socket, events ev);
+  void watch(BetterSocket::GSocket socket, Events ev);
   /* remove socket from polling */
-  void unwatch(BetterSocket::gsocket socket);
+  void unwatch(BetterSocket::GSocket socket);
   /* update the event for socket to be polled over */
-  void update_fd_event(BetterSocket::gsocket socket, events ev);
+  void update_fd_event(BetterSocket::GSocket socket, Events ev);
 
   /* poll for I/O on `poll_over` */
   void poll_io();
 
   /* check if a socket is available for some event or not */
-  template<multiplexer::events Event>
-  bool socket_available_for(BetterSocket::gsocket sock);
+  template<Multiplexer::Events Event>
+  bool socket_available_for(BetterSocket::GSocket sock);
 };
 
-
-template<multiplexer::events Event>
+template<Multiplexer::Events Event>
 bool
-multiplexer::socket_available_for(BetterSocket::gsocket sock)
+Multiplexer::socket_available_for(BetterSocket::GSocket sock)
 {
-  for (BetterSocket::size i = 0; i < fdcount; i++) {
+  for (BetterSocket::Size i = 0; i < fdcount; i++) {
     if ((poll_over[i].fd == sock) &&
         (poll_over[i].revents & std::to_underlying(Event)))
       return true;
   }
   return false;
 }
-
 
 #undef TYPEOF // i dont need you anymore :(
 

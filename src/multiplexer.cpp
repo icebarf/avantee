@@ -7,24 +7,24 @@
 
 #define SCAST(Type, e) static_cast<Type>(e)
 
-multiplexer::multiplexer()
+Multiplexer::Multiplexer()
   : fdcount{ 0 }
   , poll_over{}
 {
-  poll_over.fill(BetterSocket::gpollfd(-1, 0, 0));
+  poll_over.fill(BetterSocket::GPollfd(-1, 0, 0));
 }
 
 void
-multiplexer::watch(BetterSocket::gsocket socket, events ev)
+Multiplexer::watch(BetterSocket::GSocket socket, Events ev)
 {
   poll_over[fdcount].fd = socket;
   poll_over[fdcount++].events = std::to_underlying(ev);
 }
 
 void
-multiplexer::unwatch(BetterSocket::gsocket socket)
+Multiplexer::unwatch(BetterSocket::GSocket socket)
 {
-  for (BetterSocket::size i = 0; i < fdcount; i++) {
+  for (BetterSocket::Size i = 0; i < fdcount; i++) {
     if (poll_over[i].fd == socket) {
       // if only watching over one socket, then ignore.
       // otherwise copy over it
@@ -38,16 +38,16 @@ multiplexer::unwatch(BetterSocket::gsocket socket)
 }
 
 void
-multiplexer::update_fd_event(BetterSocket::gsocket socket, events ev)
+Multiplexer::update_fd_event(BetterSocket::GSocket socket, Events ev)
 {
-  for (BetterSocket::size i = 0; i < fdcount; i++) {
+  for (BetterSocket::Size i = 0; i < fdcount; i++) {
     if (poll_over[i].fd == socket)
       poll_over[i].events = std::to_underlying(ev);
   }
 }
 
 void
-multiplexer::poll_io()
+Multiplexer::poll_io()
 {
   int polled = BetterSocket::gPoll(
     poll_over.data(), fdcount, SCAST(int, constants::POLL_FOR));
