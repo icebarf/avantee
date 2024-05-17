@@ -309,6 +309,7 @@ BSocket::BSocket()
   , empty(false)
   , IsListener(false)
   , addressinfoList()
+  , validAddr()
   , rawSocket(BAD_SOCKET)
 {
 }
@@ -318,6 +319,7 @@ BSocket::BSocket(BetterSocket::GSocket s)
   , empty(false)
   , IsListener(false)
   , addressinfoList()
+  , validAddr()
   , rawSocket(s)
 {
   if (s == SOCK_ERR)
@@ -331,6 +333,7 @@ BSocket::BSocket(BSocket&& ms)
   , empty(ms.empty)
   , IsListener(ms.IsListener)
   , addressinfoList(ms.addressinfoList)
+  , validAddr()
   , rawSocket(ms.rawSocket)
 {
 }
@@ -342,7 +345,8 @@ BSocket::BSocket(const struct SocketHint hint,
   , empty(false)
   , IsListener(false)
   , addressinfoList(hostname, service, hint)
-  , rawSocket{ BAD_SOCKET }
+  , validAddr()
+  , rawSocket(BAD_SOCKET)
 {
   /* This commented out snippet of code needs to be fixed.
    * I think that the iterators for addresinfoP_handle structure aare broken.
@@ -374,6 +378,9 @@ BSocket::~BSocket()
   empty = true;
   IsListener = false;
   bindsCalled = false;
+  addressinfoList = {};
+  validAddr = {};
+  rawSocket = BAD_SOCKET;
 }
 
 void
@@ -392,6 +399,26 @@ GSocket
 BSocket::underlyingSocket() const
 {
   return rawSocket;
+}
+
+void
+BSocket::clearOut()
+{
+  *this = BSocket();
+}
+
+BSocket&
+BSocket::operator=(BSocket&& s)
+{
+  bindsCalled = s.bindsCalled;
+  empty = s.empty;
+  IsListener = s.IsListener;
+  addressinfoList = s.addressinfoList;
+
+  validAddr = s.validAddr;
+  rawSocket = s.rawSocket;
+  s.clearOut();
+  return *this;
 }
 
 bool
