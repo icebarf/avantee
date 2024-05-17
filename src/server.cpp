@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <netinet/in.h>
 #include <string>
 
 #include "multiplexer.hpp"
@@ -7,6 +8,7 @@
 
 #define SCAST(Type, e) static_cast<Type>(e)
 #define RCAST(Type, e) reinterpret_cast<Type>(e)
+#define TU(enum) std::to_underlying(enum)
 
 namespace BS = BetterSocket;
 
@@ -29,22 +31,31 @@ main()
   GenericPacket packet;
   BS::zero(packet.data(), packet.size());
 
+  std::array<Connection,
+             std::to_underlying(Multiplexer::constants::MAX_SERVER_CONNECTIONS)>
+    regCon;
+  BS::zero(regCon.data(),
+           sizeof(Connection) *
+             SCAST(BS::Size, Multiplexer::constants::MAX_SERVER_CONNECTIONS));
+  BS::Size curCon = 0;
+
   for (;;) {
     multiplexer.poll_io();
 
     if (multiplexer.socket_available_for<Multiplexer::Events::INPUT>(
           tftp_listener.underlyingSocket())) {
 
+      // new connection
       auto senderInfo = BS::SockaddrWrapper();
       if (tftp_listener.receiveFrom(packet.data(), packet.size(), senderInfo) !=
           1) {
+        int port = randomPort();
+        regCon[curCon].peer = BS::BSocket(hint, std::to_string(port));
+        regCon[curCon].peerLocalPort = port;
+        regCon[curCon].curPacket = packet;
+        regCon[curCon].IsActive = true;
 
-        // print sender info
-        printf("Sender Port: %d\nSender IP: %s\nPacket Content: %s\n",
-               senderInfo.getPort(),
-               senderInfo.getIP().data(),
-               (const char*)packet.data()); // ub but we dont care right now
-      }
+      } // new connection created
     }
   }
 }

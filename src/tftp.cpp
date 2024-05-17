@@ -1,5 +1,7 @@
 #include "tftp.hpp"
 #include "socket/generic_sockets.hpp"
+#include <random>
+#include <utility>
 
 void*
 RequestPacket::data()
@@ -59,4 +61,16 @@ BetterSocket::Size
 GenericPacket::size()
 {
   return sizeof(opcode) + sizeof(rawData);
+}
+
+in_port_t
+randomPort()
+{
+  std::default_random_engine engine(std::random_device);
+  std::uniform_int_distribution<in_port_t> distribution{
+    std::to_underlying(Constants::unprivPortsLower),
+    std::to_underlying(Constants::unprivPortsUpper)
+  };
+
+  return distribution(engine);
 }

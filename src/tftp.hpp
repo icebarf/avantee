@@ -9,6 +9,8 @@
 
 #include "socket/socket.hpp"
 
+#define TU(enum) std::to_underlying(enum)
+
 enum class Opcodes : int16_t
 {
   RRQ, // Read ReQuest
@@ -20,17 +22,20 @@ enum class Opcodes : int16_t
 
 enum class Constants : unsigned long
 {
-  MaxDataLen = 512,
-  MaxFilenameLen = 255,
-  MaxModeStringLen = sizeof("netascii"),
-  MaxErrorMsgLen = 255,
+  maxDataLen = 512,
+  maxFilenameLen = 255,
+  maxModeStringLen = sizeof("netascii"),
+  maxErrorMsgLen = 255,
+  maxConnections = 64,
+  unprivPortsLower = 1025,
+  unprivPortsUpper = 65535,
 };
 
 struct RequestPacket
 {
   int16_t opcode;
-  char filename[std::to_underlying(Constants::MaxFilenameLen)];
-  char mode[std::to_underlying(Constants::MaxModeStringLen)];
+  char filename[TU(Constants::maxFilenameLen)];
+  char mode[TU(Constants::maxModeStringLen)];
   void* data();
   BetterSocket::Size size();
 } __attribute((packed));
@@ -39,7 +44,7 @@ struct DataPacket
 {
   int16_t opcode;
   int16_t block;
-  std::array<std::byte, std::to_underlying(Constants::MaxDataLen)> content;
+  std::array<std::byte, TU(Constants::maxDataLen)> content;
   void* data();
   BetterSocket::Size size();
 } __attribute((packed));
@@ -56,7 +61,7 @@ struct ErrorPacket
 {
   int16_t opcode;
   int16_t error_code;
-  char error_msg[std::to_underlying(Constants::MaxErrorMsgLen)];
+  char error_msg[TU(Constants::maxErrorMsgLen)];
   void* data();
   BetterSocket::Size size();
 } __attribute((packed));
@@ -88,8 +93,15 @@ struct GenericPacket
 struct Connection
 {
   BetterSocket::BSocket peer;
-  std::string filename;
-  BetterSocket::Size block;
+  GenericPacket curPacket;
+  int peerLocalPort;
+  bool IsActive;
 };
+
+// returns a random port between 1025 and 65,535 (the unprivleged ports)
+in_port_t
+randomPort();
+
+#undef TU
 
 #endif
