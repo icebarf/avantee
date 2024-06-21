@@ -96,6 +96,7 @@ struct Connection
   GenericPacket curPacket;
   int peerLocalPort;
   bool IsActive;
+  bool IsBad;
 };
 
 // returns a random port between 1025 and 65,535 (the unprivleged ports)
