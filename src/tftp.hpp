@@ -13,11 +13,11 @@
 
 enum class Opcodes : int16_t
 {
-  RRQ, // Read ReQuest
-  WRQ, // Write ReQuest
-  DATA,
-  ACK,
-  ERROR,
+  rrq, // Read ReQuest
+  wrq, // Write ReQuest
+  data,
+  ack,
+  error,
 };
 
 enum class Constants : unsigned long
@@ -100,7 +100,7 @@ struct Connection
 };
 
 // returns a random port between 1025 and 65,535 (the unprivleged ports)
-in_port_t
+BetterSocket::in_port_t
 randomPort();
 
 #undef TU

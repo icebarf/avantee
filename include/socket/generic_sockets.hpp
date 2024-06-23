@@ -21,7 +21,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-namespace icysock {
+namespace BetterSocket {
 
 #define BAD_SOCKET INVALID_SOCKET
 #define SOCK_ERR SOCKET_ERROR
@@ -34,6 +34,7 @@ using Sockdata = WSADATA;
 using GSocket = SOCKET;
 
 using GPollfd = WSAPOLLFD;
+using in_port_t = u_short;
 }
 
 #else
@@ -56,6 +57,7 @@ using Sockdata = int;
 using GSocket = int;
 
 using GPollfd = struct pollfd;
+using in_port_t = in_port_t;
 }
 
 #endif

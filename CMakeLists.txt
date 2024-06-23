@@ -21,7 +21,7 @@ if(${CMAKE_HOST_WIN32})
   target_link_libraries(avantee-server ws2_32 )
 endif()
 target_compile_options(avantee-server PUBLIC -Wall -Wextra -Wpedantic
-                                      -Wshadow -Wconversion -g -Og)
+                                      -Wshadow -g -Og)
 
 add_executable(avantee-client)
 target_sources(avantee-client PUBLIC lib/socket/error_utils.cpp

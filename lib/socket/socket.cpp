@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
 
@@ -515,7 +514,7 @@ void
 BSocket::bindS(bool reuseSocket)
 {
   if (reuseSocket) {
-    int enable = 1;
+    char enable = 1;
     if (setsockopt(
           rawSocket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) ==
         SOCK_ERR)
@@ -555,7 +554,15 @@ BSocket::listenS()
 BetterSocket::SSize
 BSocket::receive(void* buf, BetterSocket::Size s, int flags)
 {
-  BetterSocket::SSize r = recv(rawSocket, buf, (size_t)s, flags);
+  BetterSocket::SSize r = recv(rawSocket,
+#ifdef ICY_ON_WINDOWS
+                               reinterpret_cast<char*>(buf),
+#else
+                               buf,
+#endif
+
+                               (size_t)s,
+                               flags);
   if (r == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::receive_failure,
                                std::string(std::strerror(errno)));
@@ -569,10 +576,14 @@ BSocket::receiveFrom(void* ibuf,
                      SockaddrWrapper& senderAddr,
                      int flags)
 {
-  unsigned int senderSz = sizeof(*senderAddr.m_getPtrToStorage());
+  int senderSz = sizeof(*senderAddr.m_getPtrToStorage());
   BetterSocket::SSize s =
     recvfrom(rawSocket,
+#ifdef ICY_ON_WINDOWS
+             reinterpret_cast<char*>(ibuf),
+#else
              ibuf,
+#endif
              bufsz,
              flags,
              reinterpret_cast<sockaddr*>(senderAddr.m_getPtrToStorage()),
@@ -607,7 +618,11 @@ BSocket::sendTo(void* ibuf,
   unsigned int destSz = destAddr.sockaddrsz;
   BetterSocket::SSize r =
     sendto(this->rawSocket,
+#ifdef ICY_ON_WINDOWS
+           reinterpret_cast<char*>(ibuf),
+#else
            ibuf,
+#endif
            bufsz,
            flags,
            reinterpret_cast<sockaddr*>(destAddr.m_getPtrToStorage()),

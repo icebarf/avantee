@@ -2,9 +2,7 @@
 #define ICETEA_SOCKETS_H
 
 #include <iterator>
-#include <netinet/in.h>
 #include <string_view>
-#include <sys/socket.h>
 
 #include "generic_sockets.hpp"
 
@@ -188,9 +186,9 @@ public:
   bool IsEmpty() const;
   BetterSocket::GSocket underlyingSocket() const;
   void clearOut();
-  
+
   BSocket& operator=(BSocket&& s);
-  
+
   friend bool operator==(const int& lhs, const BSocket& rhs);
   friend bool operator!=(const int& lhs, const BSocket& rhs);
   friend bool operator==(const BSocket& lhs, const int& rhs);
@@ -200,7 +198,7 @@ public:
   sockaddr getsockaddr() const;
   SockaddrWrapper getsockaddrInWrapper() const;
   void tryNext();
-  
+
   /* -- socket api -- */
 
   // `man 2 accept` takes 3 arguments, two of

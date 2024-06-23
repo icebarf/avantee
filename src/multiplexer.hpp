@@ -23,10 +23,10 @@ struct Multiplexer
     poll_over;
 
   enum class Events : TYPEOF(TYPEOF(poll_over)::value_type::events){
-    INPUT = POLLIN,
-    OUTPUT = POLLOUT,
-    ERROR = POLLERR,
-    INVALID = POLLNVAL,
+    input = POLLIN,
+    output = POLLOUT,
+    error = POLLERR,
+    invalid = POLLNVAL,
   };
 
   Multiplexer();

@@ -10,7 +10,7 @@ init()
 {
   int result = 0;
 #if defined(ICY_ON_WINDOWS)
-  SOCKDATA wsadata;
+  Sockdata wsadata;
   result = WSAStartup(MAKEWORD(2, 2), &wsadata);
   if (result != 0) {
     fprintf(stderr, "BetterSocket: WSAStartup failed with code: %d\n", result);

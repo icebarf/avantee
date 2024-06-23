@@ -63,11 +63,12 @@ GenericPacket::size()
   return sizeof(opcode) + sizeof(rawData);
 }
 
-in_port_t
+BetterSocket::in_port_t
 randomPort()
 {
-  std::default_random_engine engine(std::random_device);
-  std::uniform_int_distribution<in_port_t> distribution{
+  std::random_device dv;
+  std::default_random_engine engine(dv());
+  std::uniform_int_distribution<BetterSocket::in_port_t> distribution{
     std::to_underlying(Constants::unprivPortsLower),
     std::to_underlying(Constants::unprivPortsUpper)
   };
