@@ -33,7 +33,7 @@ enum class Constants : unsigned long
 
 struct RequestPacket
 {
-  int16_t opcode;
+  Opcodes opcode;
   char filename[TU(Constants::maxFilenameLen)];
   char mode[TU(Constants::maxModeStringLen)];
   void* data();
@@ -42,7 +42,7 @@ struct RequestPacket
 
 struct DataPacket
 {
-  int16_t opcode;
+  Opcodes opcode;
   int16_t block;
   std::array<std::byte, TU(Constants::maxDataLen)> content;
   void* data();
@@ -51,7 +51,7 @@ struct DataPacket
 
 struct AckPacket
 {
-  int16_t opcode;
+  Opcodes opcode;
   int16_t block;
   void* data();
   BetterSocket::Size size();
@@ -59,7 +59,7 @@ struct AckPacket
 
 struct ErrorPacket
 {
-  int16_t opcode;
+  Opcodes opcode;
   int16_t error_code;
   char error_msg[TU(Constants::maxErrorMsgLen)];
   void* data();
@@ -84,7 +84,7 @@ largestPacketSize()
 
 struct GenericPacket
 {
-  int16_t opcode;
+  Opcodes opcode;
   std::byte rawData[largestPacketSize() - sizeof(opcode)];
   void* data();
   BetterSocket::Size size();
@@ -93,7 +93,9 @@ struct GenericPacket
 struct Connection
 {
   BetterSocket::BSocket peer;
+  GenericPacket prevPacket;
   GenericPacket curPacket;
+  std::string associatedFile;
   int peerLocalPort;
   bool IsActive;
   bool IsBad;

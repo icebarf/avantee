@@ -3,6 +3,8 @@
 #include <random>
 #include <utility>
 
+#define TU(x) std::to_underlying(x)
+
 void*
 RequestPacket::data()
 {
@@ -12,7 +14,7 @@ RequestPacket::data()
 BetterSocket::Size
 RequestPacket::size()
 {
-  return sizeof(opcode) + sizeof(filename) + sizeof(mode);
+  return sizeof(TU(opcode)) + sizeof(filename) + sizeof(mode);
 }
 
 void*
@@ -24,7 +26,7 @@ DataPacket::data()
 BetterSocket::Size
 DataPacket::size()
 {
-  return sizeof(opcode) + sizeof(block) + sizeof(content);
+  return sizeof(TU(opcode)) + sizeof(block) + sizeof(content);
 }
 
 void*
@@ -36,7 +38,7 @@ AckPacket::data()
 BetterSocket::Size
 AckPacket::size()
 {
-  return sizeof(opcode) + sizeof(block);
+  return sizeof(TU(opcode)) + sizeof(block);
 }
 
 void*
@@ -48,7 +50,7 @@ ErrorPacket::data()
 BetterSocket::Size
 ErrorPacket::size()
 {
-  return sizeof(opcode) + sizeof(error_code) + sizeof(error_msg);
+  return sizeof(TU(opcode)) + sizeof(error_code) + sizeof(error_msg);
 }
 
 void*
@@ -60,7 +62,7 @@ GenericPacket::data()
 BetterSocket::Size
 GenericPacket::size()
 {
-  return sizeof(opcode) + sizeof(rawData);
+  return sizeof(TU(opcode)) + sizeof(rawData);
 }
 
 BetterSocket::in_port_t

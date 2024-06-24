@@ -28,7 +28,9 @@ findInactive(ConnectionsType& c)
 }
 
 void
-registerClient(auto& connections, const auto& packet, const auto& hint)
+registerClient(ConnectionsType& connections,
+               const auto& packet,
+               const auto& hint)
 {
   int port = randomPort(); // for this connection's TID
   auto& connection = findInactive(connections);
@@ -36,6 +38,35 @@ registerClient(auto& connections, const auto& packet, const auto& hint)
   connection.peerLocalPort = port;
   connection.curPacket = packet;
   connection.IsActive = true;
+}
+
+void
+runConnections(ConnectionsType& connections, const auto& hint)
+{
+  // parse the packet and then perform operations
+  for (auto& con : connections) {
+    switch (con.curPacket.opcode) {
+      case Opcodes::rrq: {
+
+      }; break;
+
+      case Opcodes::wrq: {
+
+      }; break;
+
+      case Opcodes::ack: {
+
+      }; break;
+
+      case Opcodes::data: {
+
+      }; break;
+
+      case Opcodes::error: {
+
+      }; break;
+    }
+  }
 }
 
 int
@@ -77,6 +108,8 @@ main()
         registerClient(connections, packet, hint);
       } // new connection created
     }
+
+    runConnections(connections, hint);
 
     // go through each connection and we try and work on what they do
   }
