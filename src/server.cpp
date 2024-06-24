@@ -70,13 +70,11 @@ main()
 
     if (multiplexer.socket_available_for<Multiplexer::Events::input>(
           tftp_listener.underlyingSocket())) {
-      printf("preboing");
       // new connection
       auto senderInfo = BS::SockaddrWrapper();
       if (tftp_listener.receiveFrom(packet.data(), packet.size(), senderInfo) !=
           1) {
         registerClient(connections, packet, hint);
-        printf("boing!");
       } // new connection created
     }
 
