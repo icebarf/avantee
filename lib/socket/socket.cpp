@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
+#include <sys/socket.h>
 
 #include "socket/error_utils.hpp"
 #include "socket/generic_sockets.hpp"
@@ -71,6 +72,16 @@ AddressinfoHandle::~AddressinfoHandle()
 {
   freeaddrinfo(infoP);
   infoP = nullptr;
+}
+
+constexpr AddressinfoHandle&
+AddressinfoHandle::operator=(const AddressinfoHandle& h)
+{
+  this->beginP = h.beginP;
+  this->endP = h.endP;
+  this->infoP = h.infoP;
+
+  return *this;
 }
 
 /* AddressinfoHandle Iterator implementation */
@@ -377,8 +388,6 @@ BSocket::~BSocket()
   empty = true;
   IsListener = false;
   bindsCalled = false;
-  addressinfoList = {};
-  validAddr = {};
   rawSocket = BAD_SOCKET;
 }
 
@@ -413,10 +422,9 @@ BSocket::operator=(BSocket&& s)
   empty = s.empty;
   IsListener = s.IsListener;
   addressinfoList = s.addressinfoList;
-
   validAddr = s.validAddr;
   rawSocket = s.rawSocket;
-  s.clearOut();
+  //s.clearOut();
   return *this;
 }
 
@@ -514,10 +522,17 @@ void
 BSocket::bindS(bool reuseSocket)
 {
   if (reuseSocket) {
-    char enable = 1;
-    if (setsockopt(
-          rawSocket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) ==
-        SOCK_ERR)
+    int enable = 1;
+    if (setsockopt(rawSocket,
+                   SOL_SOCKET,
+                   SO_REUSEADDR,
+#ifdef ICY_ON_WINDOWS
+                   reinterpret_cast<char*>(&enable),
+#else
+                   &enable,
+#endif
+
+                   sizeof(enable)) == SOCK_ERR)
       throw SockErrors::APIError(SockErrors::errc::setsockopt_failure,
                                  std::string(std::strerror(errno)));
   }
@@ -576,7 +591,7 @@ BSocket::receiveFrom(void* ibuf,
                      SockaddrWrapper& senderAddr,
                      int flags)
 {
-  int senderSz = sizeof(*senderAddr.m_getPtrToStorage());
+  socklen_t senderSz = sizeof(*senderAddr.m_getPtrToStorage());
   BetterSocket::SSize s =
     recvfrom(rawSocket,
 #ifdef ICY_ON_WINDOWS
@@ -587,7 +602,12 @@ BSocket::receiveFrom(void* ibuf,
              bufsz,
              flags,
              reinterpret_cast<sockaddr*>(senderAddr.m_getPtrToStorage()),
-             &senderSz);
+#ifdef ICY_ON_WINDOWS
+             reinterpret_cast<int*>(&senderSz)
+#else
+             &senderSz
+#endif
+    );
   if (s == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::receive_from_failure,
                                std::string(std::strerror(errno)));

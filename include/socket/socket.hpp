@@ -76,6 +76,8 @@ public:
   AddressinfoHandle(const AddressinfoHandle& h);
   ~AddressinfoHandle();
 
+  constexpr AddressinfoHandle& operator=(const AddressinfoHandle&);
+
   struct Iterator
   {
     using iterator_category = std::forward_iterator_tag;
