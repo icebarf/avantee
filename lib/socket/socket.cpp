@@ -424,7 +424,7 @@ BSocket::operator=(BSocket&& s)
   addressinfoList = s.addressinfoList;
   validAddr = s.validAddr;
   rawSocket = s.rawSocket;
-  //s.clearOut();
+  // s.clearOut();
   return *this;
 }
 
