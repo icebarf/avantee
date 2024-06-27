@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <string>
+#include <variant>
 
 #include "multiplexer.hpp"
 #include "socket/socket.hpp"
@@ -29,14 +30,30 @@ findInactive(ConnectionsType& c)
 
 void
 registerClient(ConnectionsType& connections,
-               const auto& packet,
+               GenericPacket& packet,
                const auto& hint)
 {
-  int port = randomPort(); // for this connection's TID
+  int port = randomPort(); // for this connection's server-side TID
+
   auto& connection = findInactive(connections);
   connection.peer = BS::BSocket(hint, std::to_string(port));
   connection.peerLocalPort = port;
-  connection.curPacket = packet;
+
+  connection.curPacket = [&]() -> PacketVariant {
+    auto opcode = packet.opcode;
+    switch (opcode) {
+      case Opcodes::ack:
+        return *reinterpret_cast<AckPacket*>(&packet);
+      case Opcodes::data:
+        return *reinterpret_cast<DataPacket*>(&packet);
+      case Opcodes::error:
+        return *reinterpret_cast<ErrorPacket*>(&packet);
+      case Opcodes::rrq:
+      case Opcodes::wrq:
+        return *reinterpret_cast<RequestPacket*>(&packet);
+    }
+  }();
+
   connection.IsActive = true;
 }
 
@@ -45,26 +62,8 @@ runConnections(ConnectionsType& connections, const auto& hint)
 {
   // parse the packet and then perform operations
   for (auto& con : connections) {
-    switch (con.curPacket.opcode) {
-      case Opcodes::rrq: {
-
-      }; break;
-
-      case Opcodes::wrq: {
-
-      }; break;
-
-      case Opcodes::ack: {
-
-      }; break;
-
-      case Opcodes::data: {
-
-      }; break;
-
-      case Opcodes::error: {
-
-      }; break;
+    if (std::holds_alternative<AckPacket>(con.curPacket)) {
+      auto& actualPacket = std::get<AckPacket>(con.curPacket);
     }
   }
 }
@@ -86,7 +85,6 @@ main()
                     Multiplexer::Events::input);
 
   GenericPacket packet;
-  BS::zero(packet.data(), packet.size());
 
   ConnectionsType connections;
   BS::zero(connections.data(),

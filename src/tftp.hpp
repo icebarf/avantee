@@ -6,18 +6,20 @@
 #include <cstddef>
 #include <cstdint>
 #include <utility>
+#include <variant>
 
 #include "socket/socket.hpp"
 
 #define TU(enum) std::to_underlying(enum)
 
+
 enum class Opcodes : int16_t
 {
-  rrq, // Read ReQuest
-  wrq, // Write ReQuest
-  data,
   ack,
+  data,
   error,
+  rrq, // read-request
+  wrq, // write-request
 };
 
 enum class Constants : unsigned long
@@ -31,11 +33,10 @@ enum class Constants : unsigned long
   unprivPortsUpper = 65535,
 };
 
-struct RequestPacket
+struct AckPacket
 {
   Opcodes opcode;
-  char filename[TU(Constants::maxFilenameLen)];
-  char mode[TU(Constants::maxModeStringLen)];
+  int16_t block;
   void* data();
   BetterSocket::Size size();
 } __attribute((packed));
@@ -49,13 +50,6 @@ struct DataPacket
   BetterSocket::Size size();
 } __attribute((packed));
 
-struct AckPacket
-{
-  Opcodes opcode;
-  int16_t block;
-  void* data();
-  BetterSocket::Size size();
-} __attribute((packed));
 
 struct ErrorPacket
 {
@@ -65,6 +59,17 @@ struct ErrorPacket
   void* data();
   BetterSocket::Size size();
 } __attribute((packed));
+
+struct RequestPacket
+{
+  Opcodes opcode;
+  char filename[TU(Constants::maxFilenameLen)];
+  char mode[TU(Constants::maxModeStringLen)];
+  void* data();
+  BetterSocket::Size size();
+} __attribute((packed));
+
+using PacketVariant=std::variant<AckPacket,DataPacket,ErrorPacket,RequestPacket>;
 
 consteval BetterSocket::Size
 largestPacketSize()
@@ -93,8 +98,8 @@ struct GenericPacket
 struct Connection
 {
   BetterSocket::BSocket peer;
-  GenericPacket prevPacket;
-  GenericPacket curPacket;
+  PacketVariant prevPacket;
+  PacketVariant curPacket;
   std::string associatedFile;
   int peerLocalPort;
   bool IsActive;
