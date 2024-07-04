@@ -43,14 +43,14 @@ registerClient(ConnectionsType& connections,
     auto opcode = packet.opcode;
     switch (opcode) {
       case Opcodes::ack:
-        return *reinterpret_cast<AckPacket*>(&packet);
+        return *RCAST(AckPacket*, &packet);
       case Opcodes::data:
-        return *reinterpret_cast<DataPacket*>(&packet);
+        return *RCAST(DataPacket*, &packet);
       case Opcodes::error:
-        return *reinterpret_cast<ErrorPacket*>(&packet);
+        return *RCAST(ErrorPacket*, &packet);
       case Opcodes::rrq:
       case Opcodes::wrq:
-        return *reinterpret_cast<RequestPacket*>(&packet);
+        return *RCAST(RequestPacket*, &packet);
     }
   }();
 

@@ -2,7 +2,6 @@
 #include "socket/generic_sockets.hpp"
 #include <random>
 #include <utility>
-#include <variant>
 
 #define TU(x) std::to_underlying(x)
 
