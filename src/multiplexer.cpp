@@ -6,6 +6,7 @@
 #include "socket/generic_sockets.hpp"
 
 #define SCAST(Type, e) static_cast<Type>(e)
+#define TU(e) std::to_underlying(e)
 
 Multiplexer::Multiplexer()
   : fdcount{ 0 }
@@ -56,4 +57,11 @@ Multiplexer::poll_io()
     std::perror("mutiplexer::poll_io -> poll()");
     std::terminate();
   }
+}
+
+// overload definition
+unsigned long
+operator*(const Multiplexer::constants& c, unsigned long v)
+{
+  return TU(c) * v;
 }

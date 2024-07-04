@@ -88,8 +88,8 @@ main()
 
   ConnectionsType connections;
   BS::zero(connections.data(),
-           sizeof(Connection) *
-             SCAST(BS::Size, Multiplexer::constants::MAX_SERVER_CONNECTIONS));
+           Multiplexer::constants::MAX_SERVER_CONNECTIONS * sizeof(Connection));
+
   connections[TU(Constants::maxConnections)].IsBad =
     true; // mark the last connection as bad. This is done for error checking
           // when maximum connections are reached.

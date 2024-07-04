@@ -11,7 +11,7 @@
 struct Multiplexer
 {
 
-  enum class constants
+  enum class constants : unsigned long
   {
     MAX_SERVER_CONNECTIONS = 64,
     POLL_FOR = 0,
@@ -57,6 +57,10 @@ Multiplexer::socket_available_for(BetterSocket::GSocket sock)
   }
   return false;
 }
+
+// overloads for our constants type
+unsigned long
+operator*(const Multiplexer::constants& c, unsigned long v);
 
 #undef TYPEOF // i dont need you anymore :(
 
