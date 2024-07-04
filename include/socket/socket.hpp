@@ -213,9 +213,9 @@ public:
   // shall implement it.
   [[nodiscard("Accepted socket must be used.")]] BetterSocket::GSocket
   acceptS();
-  void bindS(bool reuseSocket = true);
-  void connectS();
-  void listenS(); // This will call binds() for you. This is because normally
+  void bind(bool reuseSocket = true);
+  void connect();
+  void listen(); // This will call binds() for you. This is because normally
                   // the accept()'ing socket needs to be "bound" to some socket
                   // addr.
   BetterSocket::SSize receive(void* ibuf, BetterSocket::Size s, int flags = 0);
@@ -223,12 +223,12 @@ public:
                                   BetterSocket::Size bufsz,
                                   SockaddrWrapper& senderAddr,
                                   int flags = 0);
-  BetterSocket::SSize sendS(std::string_view buf, int flags = 0);
+  BetterSocket::SSize send(std::string_view buf, int flags = 0);
   BetterSocket::SSize sendTo(void* ibuf,
                              BetterSocket::Size bufsz,
                              SockaddrWrapper& destAddr,
                              int flags = 0);
-  void shutdownS(enum TransmissionEnd reason);
+  void shutdown(enum TransmissionEnd reason);
 
 }; // class BSocket
 

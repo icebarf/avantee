@@ -519,7 +519,7 @@ BetterSocket::GSocket BSocket::acceptS(/*, arg2, arg3 */)
 }
 
 void
-BSocket::bindS(bool reuseSocket)
+BSocket::bind(bool reuseSocket)
 {
   if (reuseSocket) {
     int enable = 1;
@@ -537,7 +537,7 @@ BSocket::bindS(bool reuseSocket)
                                  std::string(std::strerror(errno)));
   }
 
-  if (bind(rawSocket, validAddr.ai_addr, validAddr.ai_addrlen) == SOCK_ERR)
+  if (::bind(rawSocket, validAddr.ai_addr, validAddr.ai_addrlen) == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::bind_failure,
                                std::string(std::strerror(errno)));
 
@@ -545,21 +545,21 @@ BSocket::bindS(bool reuseSocket)
 }
 
 void
-BSocket::connectS()
+BSocket::connect()
 {
-  if (connect(rawSocket, validAddr.ai_addr, validAddr.ai_addrlen) == SOCK_ERR) {
+  if (::connect(rawSocket, validAddr.ai_addr, validAddr.ai_addrlen) == SOCK_ERR) {
     throw SockErrors::APIError(SockErrors::errc::connect_failure,
                                std::string(std::strerror(errno)));
   }
 }
 
 void
-BSocket::listenS()
+BSocket::listen()
 {
   /* call bindS if it has not been called before */
   if (!bindsCalled)
-    bindS();
-  if (listen(rawSocket, SOMAXCONN) == SOCK_ERR)
+    bind();
+  if (::listen(rawSocket, SOMAXCONN) == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::listen_failure,
                                std::string(std::strerror(errno)));
 
@@ -619,9 +619,9 @@ BSocket::receiveFrom(void* ibuf,
 }
 
 BetterSocket::SSize
-BSocket::sendS(std::string_view ibuf, int flags)
+BSocket::send(std::string_view ibuf, int flags)
 {
-  BetterSocket::SSize r = send(rawSocket, ibuf.data(), ibuf.length(), flags);
+  BetterSocket::SSize r = ::send(rawSocket, ibuf.data(), ibuf.length(), flags);
   if (r == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::send_failure,
                                std::string(std::strerror(errno)));
@@ -656,9 +656,9 @@ BSocket::sendTo(void* ibuf,
 }
 
 void
-BSocket::shutdownS(enum BetterSocket::TransmissionEnd reason)
+BSocket::shutdown(enum BetterSocket::TransmissionEnd reason)
 {
-  if (shutdown(rawSocket, static_cast<int>(reason)) == SOCK_ERR)
+  if (::shutdown(rawSocket, static_cast<int>(reason)) == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::shutdown_failure,
                                std::string(std::strerror(errno)));
 }

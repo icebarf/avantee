@@ -78,7 +78,7 @@ main()
                       BS::IpProtocol::UDP);
 
   BS::BSocket tftp_listener(hint, "69"); // tftp port: 69
-  tftp_listener.bindS();
+  tftp_listener.bind();
 
   Multiplexer multiplexer;
   multiplexer.watch(tftp_listener.underlyingSocket(),
