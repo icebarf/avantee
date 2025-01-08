@@ -12,16 +12,26 @@ int
 main(int argc, char** argv)
 {
   BetterSocket::init(); // optional: only needed on windows.
-  (void)argc;
-  BetterSocket::SocketHint h(BetterSocket::IpVersion::vAny,
-                               BetterSocket::SockKind::Stream,
-			     BetterSocket::SockFlags::UseHostIP,
-                               BetterSocket::IpProtocol::TCP);
-  BetterSocket::BSocket sock(h, PORT, argv[1]);
-  sock.connectS();
 
+  if (argc < 2) {
+    fprintf(stderr, "Usage: ./client ipaddr\n");
+    return 1;
+  }
+
+  BetterSocket::SocketHint h(BetterSocket::IpVersion::v4,
+                             BetterSocket::SockKind::Stream,
+                             BetterSocket::SockFlags::UseHostIP,
+                             BetterSocket::IpProtocol::TCP);
+
+  BetterSocket::BSocket sock(h, PORT, argv[1]);
+
+  try {
+    sock.connect();
+  } catch (const SockErrors::APIError& e) {
+    printf("Error: %s\n", e.what());
+  }
   const char* sendbuf = "this is a test";
-  BetterSocket::ssize iResult = sock.sendS(sendbuf, 0);
+  BetterSocket::SSize iResult = sock.send(sendbuf, 0);
   printf("Bytes sent: %ld\n", iResult);
 
   std::array<char, BUFLEN> recvbuf{ 0 };

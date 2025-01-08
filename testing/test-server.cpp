@@ -12,16 +12,17 @@ main()
 {
   BetterSocket::init();
   BetterSocket::SocketHint hint(BetterSocket::IpVersion::vAny,
-				BetterSocket::SockKind::Stream,
-				BetterSocket::SockFlags::UseHostIP,
-                                  BetterSocket::IpProtocol::TCP);
+                                BetterSocket::SockKind::Stream,
+                                BetterSocket::SockFlags::UseHostIP,
+                                BetterSocket::IpProtocol::TCP);
   BetterSocket::BSocket ListenSock(hint, PORT);
-  ListenSock.bindS();
-  ListenSock.listenS();
+  ListenSock.bind();
+listen:
+  ListenSock.listen();
 
   BetterSocket::BSocket ClientSock(ListenSock.acceptS());
-  BetterSocket::ssize iResult;
-  BetterSocket::ssize iSendResult;
+  BetterSocket::SSize iResult;
+  BetterSocket::SSize iSendResult;
 
   std::array<char, BUFLEN> recvbuf = { 0 };
   // Receive until the peer shuts down the connection
@@ -31,10 +32,13 @@ main()
     if (iResult > 0) {
       fprintf(stdout, "Bytes received: %ld\n", iResult);
       fprintf(stdout, "Contents: %s\n", recvbuf.data());
-      iSendResult = ClientSock.sendS(recvbuf.data());
+      iSendResult = ClientSock.send(recvbuf.data());
       fprintf(stdout, "Bytes sent: %ld\n", iSendResult);
-    } else if (iResult == 0)
-      fprintf(stdout, "Connection closing...\n");
+    } else if (iResult == 0) {
+      fprintf(stdout,
+              "Connection closing...\nWaiting for another connection...\n");
+      goto listen;
+    }
 
   } while (iResult > 0);
 
