@@ -185,6 +185,10 @@ public:
           const std::string& hostname = "");
 
   ~BSocket();
+
+  BSocket& operator=(const BSocket& s) = delete;
+  BSocket(const BSocket&) = delete;
+
   bool IsEmpty() const;
   BetterSocket::GSocket underlyingSocket() const;
   void clearOut();
@@ -216,8 +220,8 @@ public:
   void bind(bool reuseSocket = true);
   void connect();
   void listen(); // This will call binds() for you. This is because normally
-                  // the accept()'ing socket needs to be "bound" to some socket
-                  // addr.
+                 // the accept()'ing socket needs to be "bound" to some socket
+                 // addr.
   BetterSocket::SSize receive(void* ibuf, BetterSocket::Size s, int flags = 0);
   BetterSocket::SSize receiveFrom(void* ibuf,
                                   BetterSocket::Size bufsz,
