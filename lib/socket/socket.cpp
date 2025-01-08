@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
+#include <string>
 #include <sys/socket.h>
 
 #include "socket/error_utils.hpp"
@@ -335,7 +336,8 @@ BSocket::BSocket(BetterSocket::GSocket s)
   if (s == SOCK_ERR)
     throw SockErrors::SocketInitError(
       SockErrors::errc::bad_socket,
-      std::string("Creation of BSocket failed. Invalid argument."));
+      std::string("Creation of BSocket failed: Bad Socket: Check errno after "
+                  "creating GSocket."));
 }
 
 BSocket::BSocket(BSocket&& ms)
@@ -358,11 +360,6 @@ BSocket::BSocket(const struct SocketHint hint,
   , validAddr()
   , rawSocket(BAD_SOCKET)
 {
-  /* This commented out snippet of code needs to be fixed.
-   * I think that the iterators for addresinfoP_handle structure aare broken.
-   * But I shall take another look at it after I'm done testing out some code.
-   * Then this shall be fixed.
-   */
   for (auto& ainfoP : addressinfoList) {
     initRawSocket(&ainfoP);
     // socket is bad, this addrinfo structure didn't work
@@ -493,7 +490,9 @@ BSocket::tryNext()
   if (rawSocket == BAD_SOCKET) {
     throw SockErrors::APIError(
       SockErrors::errc::bad_socket,
-      "initialising socket failed while trying the next 'struct addrinfo'");
+      std::string(
+        "initialising socket failed while trying the next 'struct addrinfo':") +
+        std::string(std::strerror(errno)));
   }
   bindsCalled = false;
   empty = false;
@@ -547,7 +546,8 @@ BSocket::bind(bool reuseSocket)
 void
 BSocket::connect()
 {
-  if (::connect(rawSocket, validAddr.ai_addr, validAddr.ai_addrlen) == SOCK_ERR) {
+  if (::connect(rawSocket, validAddr.ai_addr, validAddr.ai_addrlen) ==
+      SOCK_ERR) {
     throw SockErrors::APIError(SockErrors::errc::connect_failure,
                                std::string(std::strerror(errno)));
   }
