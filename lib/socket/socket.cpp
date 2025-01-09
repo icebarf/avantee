@@ -501,12 +501,12 @@ BSocket::tryNext()
 
 /* -- socket api -- */
 /* implement arg2 and arg3 at a later date, more infoP in header file. */
-BetterSocket::GSocket BSocket::acceptS(/*, arg2, arg3 */)
+BetterSocket::GSocket BSocket::accept(/*, arg2, arg3 */)
 {
   /* Only call accept() on the socket if listen() has been called before.
    * Otherwise do nothing and return an invalid socket. */
   if (IsListener) {
-    BetterSocket::GSocket accepted = accept(rawSocket, nullptr, nullptr);
+    BetterSocket::GSocket accepted = ::accept(rawSocket, nullptr, nullptr);
     if (accepted == SOCK_ERR)
       throw SockErrors::APIError(SockErrors::errc::accept_failure,
                                  std::string(std::strerror(errno)));

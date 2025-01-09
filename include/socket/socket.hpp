@@ -215,8 +215,7 @@ public:
   // NULL those arguments by defualt. As soon
   // as I have a proper thought out solution, I
   // shall implement it.
-  [[nodiscard("Accepted socket must be used.")]] BetterSocket::GSocket
-  acceptS();
+  [[nodiscard("Accepted socket must be used.")]] BetterSocket::GSocket accept();
   void bind(bool reuseSocket = true);
   void connect();
   void listen(); // This will call binds() for you. This is because normally
