@@ -20,7 +20,7 @@ main()
 listen:
   ListenSock.listen();
 
-  BetterSocket::BSocket ClientSock(ListenSock.acceptS());
+  BetterSocket::BSocket ClientSock(ListenSock.accept());
   BetterSocket::SSize iResult;
   BetterSocket::SSize iSendResult;
 

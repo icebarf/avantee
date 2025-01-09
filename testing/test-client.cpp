@@ -5,7 +5,7 @@
 #include <array>
 #include <cstdio>
 
-#define PORT "6900"
+#define PORT "3490"
 #define BUFLEN 512
 
 int
