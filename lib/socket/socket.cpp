@@ -552,6 +552,7 @@ BSocket::accept(SockaddrWrapper& addr)
                                  std::string(std::strerror(errno)));
     if (addr.IsEmpty)
       addr.IsEmpty = false;
+    addr.m_setIP();
 
     return accepted;
   }
