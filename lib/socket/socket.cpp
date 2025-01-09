@@ -176,6 +176,7 @@ AddressinfoHandle::next()
 SockaddrWrapper::SockaddrWrapper()
   : wrappingOverIP(IpVersion::vAny)
   , sockaddrsz(0)
+  , IsEmpty(true)
   , genericSockaddr()
   , ipv4Sockaddr()
   , ipv6Sockaddr()
@@ -183,9 +184,14 @@ SockaddrWrapper::SockaddrWrapper()
 {
 }
 
+// m_setIP() will set wrappingOverIP and IsSetIPCalled, no need to specify in
+// initializer list
 SockaddrWrapper::SockaddrWrapper(sockaddr s, socklen_t size)
   : sockaddrsz(size)
+  , IsEmpty(false)
   , genericSockaddr(*(reinterpret_cast<sockaddr_storage*>(&s)))
+  , ipv4Sockaddr()
+  , ipv6Sockaddr()
 {
   m_setIP();
 }
@@ -193,7 +199,10 @@ SockaddrWrapper::SockaddrWrapper(sockaddr s, socklen_t size)
 SockaddrWrapper::SockaddrWrapper(sockaddr_in s4, socklen_t size)
   : wrappingOverIP(IpVersion::v4)
   , sockaddrsz(size)
+  , IsEmpty(false)
+  , genericSockaddr()
   , ipv4Sockaddr(s4)
+  , ipv6Sockaddr()
   , IsSetIPCalled(true)
 {
 }
@@ -201,6 +210,8 @@ SockaddrWrapper::SockaddrWrapper(sockaddr_in s4, socklen_t size)
 SockaddrWrapper::SockaddrWrapper(sockaddr_in6 s6, socklen_t size)
   : wrappingOverIP(IpVersion::v6)
   , sockaddrsz(size)
+  , IsEmpty(false)
+  , ipv4Sockaddr()
   , ipv6Sockaddr(s6)
   , IsSetIPCalled(true)
 {
@@ -209,7 +220,10 @@ SockaddrWrapper::SockaddrWrapper(sockaddr_in6 s6, socklen_t size)
 SockaddrWrapper::SockaddrWrapper(sockaddr_in& s4, socklen_t size)
   : wrappingOverIP(IpVersion::v4)
   , sockaddrsz(size)
+  , IsEmpty(false)
+  , genericSockaddr()
   , ipv4Sockaddr(s4)
+  , ipv6Sockaddr()
   , IsSetIPCalled(true)
 {
 }
@@ -217,6 +231,8 @@ SockaddrWrapper::SockaddrWrapper(sockaddr_in& s4, socklen_t size)
 SockaddrWrapper::SockaddrWrapper(sockaddr_in6& s6, socklen_t size)
   : wrappingOverIP(IpVersion::v6)
   , sockaddrsz(size)
+  , IsEmpty(false)
+  , ipv4Sockaddr()
   , ipv6Sockaddr(s6)
   , IsSetIPCalled(true)
 {
@@ -316,23 +332,25 @@ SockaddrWrapper::m_getPtrToStorage()
 /******** struct BSocket ************/
 
 BSocket::BSocket()
-  : bindsCalled(false)
+  : bindCalled(false)
   , empty(false)
   , IsListener(false)
   , addressinfoList()
   , validAddr()
   , rawSocket(BAD_SOCKET)
 {
+  LocalData::default_v = SockaddrWrapper();
 }
 
 BSocket::BSocket(BetterSocket::GSocket s)
-  : bindsCalled(false)
+  : bindCalled(false)
   , empty(false)
   , IsListener(false)
   , addressinfoList()
   , validAddr()
   , rawSocket(s)
 {
+  LocalData::default_v = SockaddrWrapper();
   if (s == SOCK_ERR)
     throw SockErrors::SocketInitError(
       SockErrors::errc::bad_socket,
@@ -341,25 +359,27 @@ BSocket::BSocket(BetterSocket::GSocket s)
 }
 
 BSocket::BSocket(BSocket&& ms)
-  : bindsCalled(ms.bindsCalled)
+  : bindCalled(ms.bindCalled)
   , empty(ms.empty)
   , IsListener(ms.IsListener)
   , addressinfoList(ms.addressinfoList)
   , validAddr()
   , rawSocket(ms.rawSocket)
 {
+  LocalData::default_v = SockaddrWrapper();
 }
 
 BSocket::BSocket(const struct SocketHint hint,
                  const string& service,
                  const string& hostname)
-  : bindsCalled(false)
+  : bindCalled(false)
   , empty(false)
   , IsListener(false)
   , addressinfoList(hostname, service, hint)
   , validAddr()
   , rawSocket(BAD_SOCKET)
 {
+  LocalData::default_v = SockaddrWrapper();
   for (auto& ainfoP : addressinfoList) {
     initRawSocket(&ainfoP);
     // socket is bad, this addrinfo structure didn't work
@@ -381,10 +401,11 @@ BSocket::BSocket(const struct SocketHint hint,
 
 BSocket::~BSocket()
 {
+  LocalData::default_v = SockaddrWrapper();
   BetterSocket::closeSocket(rawSocket);
   empty = true;
   IsListener = false;
-  bindsCalled = false;
+  bindCalled = false;
   rawSocket = BAD_SOCKET;
 }
 
@@ -415,7 +436,7 @@ BSocket::clearOut()
 BSocket&
 BSocket::operator=(BSocket&& s)
 {
-  bindsCalled = s.bindsCalled;
+  bindCalled = s.bindCalled;
   empty = s.empty;
   IsListener = s.IsListener;
   addressinfoList = s.addressinfoList;
@@ -494,22 +515,33 @@ BSocket::tryNext()
         "initialising socket failed while trying the next 'struct addrinfo':") +
         std::string(std::strerror(errno)));
   }
-  bindsCalled = false;
+  bindCalled = false;
   empty = false;
   IsListener = false;
 }
 
 /* -- socket api -- */
-/* implement arg2 and arg3 at a later date, more infoP in header file. */
-BetterSocket::GSocket BSocket::accept(/*, arg2, arg3 */)
+BetterSocket::GSocket
+BSocket::accept(SockaddrWrapper& addr)
 {
+  socklen_t addrlen = sizeof(SockaddrWrapper::vAny_type);
+  socklen_t* addrlen_p = &addrlen;
+  sockaddr* addr_p = reinterpret_cast<sockaddr*>(addr.m_getPtrToStorage());
+  // Think of some way to send nullptr if user doesn't give an argument somehow
+  // if (addr.IsEmpty) {
+  //   addr_p = nullptr;
+  //   addrlen_p = nullptr;
+  // }
+
   /* Only call accept() on the socket if listen() has been called before.
    * Otherwise do nothing and return an invalid socket. */
   if (IsListener) {
-    BetterSocket::GSocket accepted = ::accept(rawSocket, nullptr, nullptr);
+    BetterSocket::GSocket accepted = ::accept(rawSocket, addr_p, addrlen_p);
     if (accepted == SOCK_ERR)
       throw SockErrors::APIError(SockErrors::errc::accept_failure,
                                  std::string(std::strerror(errno)));
+    if (addr.IsEmpty)
+      addr.IsEmpty = false;
 
     return accepted;
   }
@@ -540,7 +572,7 @@ BSocket::bind(bool reuseSocket)
     throw SockErrors::APIError(SockErrors::errc::bind_failure,
                                std::string(std::strerror(errno)));
 
-  bindsCalled = true;
+  bindCalled = true;
 }
 
 void
@@ -556,8 +588,8 @@ BSocket::connect()
 void
 BSocket::listen()
 {
-  /* call bindS if it has not been called before */
-  if (!bindsCalled)
+  /* call bind if it has not been called before */
+  if (!bindCalled)
     bind();
   if (::listen(rawSocket, SOMAXCONN) == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::listen_failure,

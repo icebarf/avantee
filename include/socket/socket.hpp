@@ -116,11 +116,17 @@ public:
 
 // Wrapper over `sockaddr_*` structures
 // check wrappingOverIP then call either get* functions
+// it is your responsibility to set `IsEmpty` to false if you modify any
+// pointers inside the wrapper to a valid state
 struct SockaddrWrapper
 {
 public:
+  using v4_type = struct sockaddr_in;
+  using v6_type = struct sockaddr_in6;
+  using vAny_type = struct sockaddr_storage;
   IpVersion wrappingOverIP;
   unsigned int sockaddrsz;
+  bool IsEmpty;
 
   SockaddrWrapper();
   SockaddrWrapper(sockaddr s, socklen_t size = sizeof(sockaddr));
@@ -149,7 +155,7 @@ private:
  * Not every function is wrapped over, only the handful ones that need
  * be used in avantee. They are as follows:
  * Return Type            Identifier    Params                 Wrapping-Over
- * void                   bindS         bool                   bind
+ * void                   bind         bool                   bind
  * void                   connectS      [None]                 connect
  * void                   listenS       [None]                 listen
  * BetterSocket::ssize    receieve      void*,                 recv
@@ -167,12 +173,16 @@ private:
  */
 class BSocket
 {
-  bool bindsCalled{ false };
+  bool bindCalled{ false };
   bool empty{ true };
   bool IsListener{ false };
   AddressinfoHandle addressinfoList = {};
 
   void initRawSocket(struct addrinfo* a);
+  struct LocalData
+  {
+    static SockaddrWrapper default_v;
+  };
 
 public:
   struct addrinfo validAddr = {};
@@ -207,18 +217,11 @@ public:
 
   /* -- socket api -- */
 
-  // `man 2 accept` takes 3 arguments, two of
-  // which will contain relevant information
-  // about the peer connection. Currently I
-  // have no abstraction for the `struct
-  // sockaddr*` structure therefore we will
-  // NULL those arguments by defualt. As soon
-  // as I have a proper thought out solution, I
-  // shall implement it.
-  [[nodiscard("Accepted socket must be used.")]] BetterSocket::GSocket accept();
+  [[nodiscard("Accepted socket must be used.")]] BetterSocket::GSocket accept(
+    SockaddrWrapper& addr = LocalData::default_v);
   void bind(bool reuseSocket = true);
   void connect();
-  void listen(); // This will call binds() for you. This is because normally
+  void listen(); // This will call bind() for you. This is because normally
                  // the accept()'ing socket needs to be "bound" to some socket
                  // addr.
   BetterSocket::SSize receive(void* ibuf, BetterSocket::Size s, int flags = 0);
