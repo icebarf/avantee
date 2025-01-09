@@ -173,6 +173,7 @@ private:
  */
 class BSocket
 {
+  bool alreadyClosed{ false };
   bool bindCalled{ false };
   bool empty{ true };
   bool IsListener{ false };
@@ -181,7 +182,7 @@ class BSocket
   void initRawSocket(struct addrinfo* a);
   struct LocalData
   {
-    static SockaddrWrapper default_v;
+    inline static SockaddrWrapper default_v;
   };
 
 public:
@@ -196,14 +197,14 @@ public:
 
   ~BSocket();
 
-  BSocket& operator=(const BSocket& s) = delete;
+  BSocket& operator=(const BSocket&& s);
+  BSocket& operator=(const GSocket& s);
+  BSocket& operator=(BSocket& s) = delete;
   BSocket(const BSocket&) = delete;
 
   bool IsEmpty() const;
   BetterSocket::GSocket underlyingSocket() const;
   void clearOut();
-
-  BSocket& operator=(BSocket&& s);
 
   friend bool operator==(const int& lhs, const BSocket& rhs);
   friend bool operator!=(const int& lhs, const BSocket& rhs);
@@ -221,9 +222,10 @@ public:
     SockaddrWrapper& addr = LocalData::default_v);
   void bind(bool reuseSocket = true);
   void connect();
-  void listen(); // This will call bind() for you. This is because normally
-                 // the accept()'ing socket needs to be "bound" to some socket
-                 // addr.
+  void listen(
+    int backlog = SOMAXCONN); // This will call bind() for you. This is because
+                              // normally the accept()'ing socket needs to be
+                              // "bound" to some socket addr.
   BetterSocket::SSize receive(void* ibuf, BetterSocket::Size s, int flags = 0);
   BetterSocket::SSize receiveFrom(void* ibuf,
                                   BetterSocket::Size bufsz,
@@ -235,6 +237,7 @@ public:
                              SockaddrWrapper& destAddr,
                              int flags = 0);
   void shutdown(enum TransmissionEnd reason);
+  void close();
 
 }; // class BSocket
 

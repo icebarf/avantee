@@ -47,8 +47,10 @@ AddressinfoHandle::AddressinfoHandle(const string& hostname,
     hints.ai_flags = static_cast<int>(hint.flags);
   hints.ai_protocol = static_cast<int>(hint.ipproto);
 
-  int rv = getaddrinfo(
-    hostname.empty() ? NULL : hostname.data(), service.data(), &hints, &infoP);
+  int rv = getaddrinfo(hostname.empty() ? nullptr : hostname.data(),
+                       service.data(),
+                       &hints,
+                       &infoP);
   if (rv != 0) {
     throw SockErrors::SocketInitError(SockErrors::errc::getaddrinfo_failure,
                                       gai_strerror(rv));
@@ -402,7 +404,8 @@ BSocket::BSocket(const struct SocketHint hint,
 BSocket::~BSocket()
 {
   LocalData::default_v = SockaddrWrapper();
-  BetterSocket::closeSocket(rawSocket);
+  if (!alreadyClosed)
+    BetterSocket::closeSocket(rawSocket);
   empty = true;
   IsListener = false;
   bindCalled = false;
@@ -434,7 +437,14 @@ BSocket::clearOut()
 }
 
 BSocket&
-BSocket::operator=(BSocket&& s)
+BSocket::operator=(const GSocket& s)
+{
+  rawSocket = s;
+  return *this;
+}
+
+BSocket&
+BSocket::operator=(const BSocket&& s)
 {
   bindCalled = s.bindCalled;
   empty = s.empty;
@@ -586,8 +596,14 @@ BSocket::connect()
 }
 
 void
-BSocket::listen()
+BSocket::listen(int backlog)
 {
+  if (backlog > SOMAXCONN) {
+    throw SockErrors::APIError(
+      SockErrors::errc::listen_failure,
+      "backlog argument larger than Maximum Backlog supported (SOMAXCONN)");
+  }
+
   /* call bind if it has not been called before */
   if (!bindCalled)
     bind();
@@ -693,6 +709,16 @@ BSocket::shutdown(enum BetterSocket::TransmissionEnd reason)
   if (::shutdown(rawSocket, static_cast<int>(reason)) == SOCK_ERR)
     throw SockErrors::APIError(SockErrors::errc::shutdown_failure,
                                std::string(std::strerror(errno)));
+}
+
+void
+BSocket::close()
+{
+  if (::close(rawSocket) == SOCK_ERR) {
+    throw SockErrors::APIError(SockErrors::errc::close_failure,
+                               std::string(std::strerror(errno)));
+  }
+  alreadyClosed = true;
 }
 // finish BSocket
 } // namespace BetterSocket

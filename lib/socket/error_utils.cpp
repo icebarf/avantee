@@ -23,50 +23,53 @@ make_error_code(errc e) noexcept
           return "Success";
 
         case errc::accept_failure:
-          return std::string("accept() failed");
+          return std::string("accept() failed: ");
 
         case errc::bad_socket:
           return std::string("Bad Socket: ") +
                  std::string(std::strerror(errno));
 
         case errc::bad_addrinfolist:
-          return std::string("addrinfo list structure is bad");
+          return std::string("addrinfo list structure is bad: ");
 
         case errc::bind_failure:
-          return std::string("bind() failed");
+          return std::string("bind() failed: ");
+
+        case errc::close_failure:
+          return std::string("close() failed: ");
 
         case errc::connect_failure:
-          return std::string("connect() failed");
+          return std::string("connect() failed: ");
 
         case errc::getaddrinfo_failure:
-          return std::string("getaddrinfo() failed");
+          return std::string("getaddrinfo() failed: ");
 
         case errc::listen_failure:
-          return std::string("listen() failed");
+          return std::string("listen() failed: ");
 
         case errc::ipfamily_not_set:
-          return std::string("SockaddrWrapper::IsSetIPCalled is false.");
+          return std::string("SockaddrWrapper::IsSetIPCalled is false: ");
 
         case errc::receive_failure:
-          return std::string("recv() failed");
+          return std::string("recv() failed: ");
 
         case errc::receive_from_failure:
-          return std::string("recvfrom() failed");
+          return std::string("recvfrom() failed: ");
 
         case errc::send_failure:
-          return std::string("send() failed");
+          return std::string("send() failed: ");
 
         case errc::sendto_failure:
-          return std::string("sendto() failed");
+          return std::string("sendto() failed: ");
 
         case errc::setsockopt_failure:
-          return std::string("setsockopt() failed");
+          return std::string("setsockopt() failed: ");
 
         case errc::shutdown_failure:
-          return std::string("shutdown() failed");
+          return std::string("shutdown() failed: ");
 
         default:
-          return "Unknown error";
+          return "Unknown error: ";
       }
     }
 

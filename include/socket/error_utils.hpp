@@ -16,6 +16,7 @@ enum class errc
   bad_addrinfolist,
   bad_socket,
   bind_failure,
+  close_failure,
   connect_failure,
   getaddrinfo_failure,
   ipfamily_not_set,
